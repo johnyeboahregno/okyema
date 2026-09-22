@@ -423,7 +423,7 @@
             </div>
             <p class="muted small" v-else>No connectors connected yet.</p>
 
-            <p class="muted small" style="margin-top:16px">Okyema v<?= e(config('okyema.app.version')) ?> · Powered by Regno AI</p>
+            <p class="muted small" style="margin-top:16px">Okyema v<?= e(config('okyema.app.version')) ?> · Powered by <img class="regnoai-logo regnoai-logo--light" src="<?= e($base) ?>/assets/regnoai.png" alt="Regno AI"><img class="regnoai-logo regnoai-logo--dark" src="<?= e($base) ?>/assets/regnoai-white.png" alt="Regno AI"></p>
         </section>
 
         <!-- ── PLACEHOLDER TABS ─────────────────────────────── -->

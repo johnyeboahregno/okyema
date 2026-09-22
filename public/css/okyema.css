@@ -306,6 +306,10 @@ a.list__item { text-decoration: none; }
 .auth-switch { text-align: center; color: var(--text-muted); margin: 18px 0 0; font-size: .9rem; }
 .auth-credit { text-align: center; color: var(--text-muted); font-size: .8rem; margin: 16px 0 0; }
 .auth-credit img { height: 14px; vertical-align: middle; }
+.regnoai-logo { height: 14px; vertical-align: middle; }
+.regnoai-logo--dark { display: none; }
+[data-theme="dark"] .regnoai-logo--dark { display: inline; }
+[data-theme="dark"] .regnoai-logo--light { display: none; }
 
 .field { display: grid; gap: 6px; }
 .field span { font-size: .85rem; font-weight: 600; color: var(--text-muted); }

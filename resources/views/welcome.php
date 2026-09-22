@@ -18,7 +18,7 @@
     <h1 class="splash__title">Okyema</h1>
     <p class="splash__tagline">Your intelligent chief of staff</p>
     <a class="splash__cta" href="<?= e($base) ?>/login" aria-label="Continue to sign in"><span aria-hidden="true">→</span></a>
-    <p class="splash__credit">Powered by Regno AI</p>
+    <p class="splash__credit">Powered by <img class="regnoai-logo" src="<?= e($base) ?>/assets/regnoai-white.png" alt="Regno AI"></p>
 </main>
 </body>
 </html>

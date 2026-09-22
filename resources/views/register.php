@@ -46,7 +46,7 @@
     </form>
 
     <p class="auth-switch">Already have an account? <a href="<?= e($base) ?>/login">Sign in</a></p>
-    <p class="auth-credit">Powered by Regno AI</p>
+    <p class="auth-credit">Powered by <img class="regnoai-logo" src="<?= e($base) ?>/assets/regnoai.png" alt="Regno AI"></p>
 </main>
 </body>
 </html>

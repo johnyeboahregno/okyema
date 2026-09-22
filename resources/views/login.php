@@ -43,7 +43,7 @@
     <?php } ?>
 
     <p class="auth-switch">New here? <a href="<?= e($base) ?>/register">Create an account</a></p>
-    <p class="auth-credit">Powered by Regno AI</p>
+    <p class="auth-credit">Powered by <img class="regnoai-logo" src="<?= e($base) ?>/assets/regnoai.png" alt="Regno AI"></p>
 </main>
 </body>
 </html>
