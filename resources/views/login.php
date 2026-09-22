@@ -19,9 +19,9 @@
         <p class="auth-tagline">Your intelligent chief of staff</p>
     </div>
 
-    <?php if ($errors->any()): ?>
+    <?php if ($errors->any()) { ?>
         <div class="auth-alert" role="alert"><?= e($errors->first()) ?></div>
-    <?php endif; ?>
+    <?php } ?>
 
     <form method="POST" action="<?= e($base) ?>/login" class="auth-form">
         <input type="hidden" name="_token" value="<?= e($csrf) ?>">
@@ -36,10 +36,10 @@
         <button type="submit" class="btn btn--primary btn--block">Sign in</button>
     </form>
 
-    <?php if (! empty(config('services.google.client_id'))): ?>
+    <?php if (! empty(config('services.google.client_id'))) { ?>
         <div class="auth-divider">or</div>
         <a class="btn btn--ghost btn--block" href="<?= e($base) ?>/auth/google/redirect">Continue with Google</a>
-    <?php endif; ?>
+    <?php } ?>
 
     <p class="auth-switch">New here? <a href="<?= e($base) ?>/register">Create an account</a></p>
     <p class="auth-credit">Powered by Regno AI</p>

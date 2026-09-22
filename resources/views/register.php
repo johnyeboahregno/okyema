@@ -19,9 +19,9 @@
         <p class="auth-tagline">Your intelligent chief of staff</p>
     </div>
 
-    <?php if ($errors->any()): ?>
+    <?php if ($errors->any()) { ?>
         <div class="auth-alert" role="alert"><?= e($errors->first()) ?></div>
-    <?php endif; ?>
+    <?php } ?>
 
     <form method="POST" action="<?= e($base) ?>/register" class="auth-form">
         <input type="hidden" name="_token" value="<?= e($csrf) ?>">
