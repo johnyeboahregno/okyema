@@ -13,9 +13,10 @@
 </head>
 <body class="splash-body">
 <main class="splash-image">
-    <p style="color:#F5F7FB;font-size:2rem;font-weight:800;margin:0;letter-spacing:-.02em">Okyema</p>
-    <p style="color:#9BA6C2;margin:8px 0 0">Your intelligent chief of staff</p>
-    <a class="splash__cta" href="<?= e($base) ?>/login" aria-label="Continue">→</a>
+    <div class="splash__mark" aria-hidden="true">O</div>
+    <h1 class="splash__title">Okyema</h1>
+    <p class="splash__tagline">Your intelligent chief of staff</p>
+    <a class="splash__cta" href="<?= e($base) ?>/login" aria-label="Continue to sign in"><span aria-hidden="true">→</span></a>
     <p class="splash__credit">Powered by Regno AI</p>
 </main>
 </body>
