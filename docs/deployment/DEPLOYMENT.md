@@ -5,13 +5,15 @@ Okyema follows the SIKA deployment pattern: a shared Docker Compose stack
 
 ## Environment
 
+Production domain: **`https://john.okyema.work`**.
+
 Copy `.env.example` to `.env` and set, at minimum:
 
-- `APP_ENV=production`, `APP_DEBUG=false`, `APP_URL=https://your-domain`
+- `APP_ENV=production`, `APP_DEBUG=false`, `APP_URL=https://john.okyema.work`
 - `DB_CONNECTION=mysql` and the MySQL credentials
-- `SANCTUM_STATEFUL_DOMAINS=your-domain,www.your-domain`
-- `GOOGLE_REDIRECT_URI=https://your-domain/auth/google/callback` (registered
-  verbatim in the Google Cloud console)
+- `SANCTUM_STATEFUL_DOMAINS=john.okyema.work`
+- `GOOGLE_REDIRECT_URI=https://john.okyema.work/auth/google/callback`
+  (registered verbatim in the Google Cloud console)
 
 See `GOOGLE_SIGNIN.md`-style notes in `.env.example`.
 
@@ -43,7 +45,8 @@ them, runs `php artisan migrate --force`, then emails the deploy summary via
 - `docker/nginx/default.conf` — routes everything through `public/index.php`.
 
 The shared Compose stack lives at `$HOME/courtly` (`COMPOSE_DIR`) and also runs
-the reverse proxy and the `okyema-mysql` database.
+the reverse proxy and the `okyema-mysql` database. Point Caddy at
+`okyema-app:80` for the `john.okyema.work` domain.
 
 ## Health and rollback
 
