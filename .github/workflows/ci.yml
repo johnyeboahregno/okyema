@@ -14,8 +14,10 @@ jobs:
       - name: Setup PHP
         uses: shivammathur/setup-php@v2
         with:
-          php-version: '8.3'
-          extensions: dom, curl, libxml, mbstring, zip, pdo, sqlite, pdo_sqlite
+          # Match composer.json `config.platform.php` and the production
+          # Dockerfile (php:8.4-fpm) — 8.3 fails the platform check.
+          php-version: '8.4'
+          extensions: dom, curl, libxml, mbstring, zip, pdo, sqlite, pdo_sqlite, bcmath
           coverage: none
 
       # The shared `courtly/ai-client` package is a VCS repository; if it is
