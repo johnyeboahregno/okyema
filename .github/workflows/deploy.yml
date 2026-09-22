@@ -1,0 +1,77 @@
+name: Deploy to VPS
+
+on:
+  push:
+    branches: [ master ]
+  workflow_dispatch:
+
+jobs:
+  deploy:
+    name: Deploy over SSH
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check required secrets
+        env:
+          VPS_SSH_KEY: ${{ secrets.VPS_SSH_KEY }}
+          VPS_HOST: ${{ secrets.VPS_HOST }}
+          VPS_USER: ${{ secrets.VPS_USER }}
+          DEPLOY_EMAIL: ${{ secrets.DEPLOY_EMAIL }}
+        run: |
+          missing=""
+          for name in VPS_SSH_KEY VPS_HOST VPS_USER DEPLOY_EMAIL; do
+            if [ -z "${!name}" ]; then missing="$missing $name"; fi
+          done
+          if [ -n "$missing" ]; then
+            echo "::error::Missing repository secret(s):$missing — add them under Settings → Secrets and variables → Actions (same values as the Courtly repo)."
+            exit 1
+          fi
+
+      - name: Configure SSH
+        run: |
+          mkdir -p ~/.ssh
+          echo "${{ secrets.VPS_SSH_KEY }}" > ~/.ssh/deploy_key
+          chmod 600 ~/.ssh/deploy_key
+          ssh-keyscan -H "${{ secrets.VPS_HOST }}" >> ~/.ssh/known_hosts 2>/dev/null || true
+
+      - name: Write mail config to VPS .env
+        run: |
+          ssh -i ~/.ssh/deploy_key "${{ secrets.VPS_USER }}@${{ secrets.VPS_HOST }}" bash -s <<'REMOTE'
+          set -e
+          cd ~/okyema
+          grep -vE '^MAIL_' .env > .env.mail.tmp || true
+          # Reuse the mail credentials Courtly's workflow already wrote to the
+          # shared VPS, so this repo needs no mail secrets of its own.
+          grep -E '^MAIL_' ~/courtly/.env >> .env.mail.tmp || true
+          chmod 600 .env.mail.tmp
+          mv .env.mail.tmp .env
+          REMOTE
+
+      - name: Deploy
+        run: |
+          ssh -i ~/.ssh/deploy_key "${{ secrets.VPS_USER }}@${{ secrets.VPS_HOST }}" bash -s <<'REMOTE'
+            set -e
+            cd ~/okyema
+            git fetch origin master
+            git reset --hard origin/master
+
+            # The shared Compose stack lives with Courtly and runs the single
+            # Caddy that fronts both domains, plus an okyema-mysql service.
+            cd ~/courtly
+            sudo docker compose build okyema-app okyema-queue
+            sudo docker compose up -d --force-recreate okyema-app okyema-queue
+            sudo docker compose exec -T okyema-app php artisan migrate --force
+            sudo docker compose ps --format 'table {{.Name}}\t{{.Status}}'
+          REMOTE
+
+      - name: Send deployment email
+        run: |
+          ssh -i ~/.ssh/deploy_key "${{ secrets.VPS_USER }}@${{ secrets.VPS_HOST }}" bash -s <<'REMOTE'
+            set -e
+            cd ~/okyema
+            COMMIT="$(git rev-parse --short HEAD)"
+            CHANGES="$(git log -1 --pretty=format:'%s%n%n%b')"
+            FILES="$(git diff-tree --no-commit-id --name-status -r HEAD)"
+            SUMMARY="$(printf '%s\n\nFiles changed:\n%s' "$CHANGES" "$FILES")"
+            cd ~/courtly
+            sudo docker compose exec -T okyema-app php artisan mail:deploy-success "${{ secrets.DEPLOY_EMAIL }}" "$COMMIT" "$SUMMARY"
+          REMOTE

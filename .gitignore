@@ -1,0 +1,28 @@
+/vendor
+/node_modules
+/public/build
+/public/hot
+/storage/*.key
+.env
+.env.backup
+.phpunit.result.cache
+Homestead.json
+Homestead.yaml
+auth.json
+npm-debug.log
+yarn-error.log
+/.fleet
+/.idea
+/.vscode
+.DS_Store
+Thumbs.db
+test-results/
+playwright-report/
+database/*.sqlite
+database/*.sqlite-journal
+database/*.sqlite-wal
+database/*.sqlite-shm
+/storage/app/receipts/
+
+# Local scratch files (brand reference screenshots etc.)
+ChatGPT Image*.png

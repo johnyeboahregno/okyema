@@ -1,0 +1,12 @@
+{
+  "name": "okyema-e2e",
+  "private": true,
+  "description": "Browser end-to-end tests (Playwright) for Okyema, runnable fully offline.",
+  "scripts": {
+    "test:e2e": "playwright test",
+    "test:e2e:headed": "playwright test --headed"
+  },
+  "devDependencies": {
+    "@playwright/test": "1.63.0"
+  }
+}
