@@ -96,6 +96,9 @@ button { font-family: inherit; }
     width: 36px; height: 36px; border-radius: 50%;
     display: block;
 }
+.appbar__logo--dark { display: none; }
+[data-theme="dark"] .appbar__logo--dark { display: block; }
+[data-theme="dark"] .appbar__logo--light { display: none; }
 
 .context-chip {
     display: inline-flex; align-items: center; gap: 6px;

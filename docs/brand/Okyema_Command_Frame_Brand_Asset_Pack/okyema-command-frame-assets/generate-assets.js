@@ -4,10 +4,11 @@ const sharp = require('sharp');
 
 const root = __dirname;
 const sizes = [16, 32, 48, 64, 72, 96, 128, 144, 152, 180, 192, 256, 384, 512, 1024];
-const mark = fs.readFileSync(path.join(root, 'okyema-mark.svg'), 'utf8');
+const markLight = fs.readFileSync(path.join(root, 'okyema-mark-light.svg'), 'utf8');
+const markDark = fs.readFileSync(path.join(root, 'okyema-mark-dark.svg'), 'utf8');
 
 function svgFile(name, body) { fs.writeFileSync(path.join(root, name), body); }
-function markAt(x, y, size) {
+function markAt(mark, x, y, size) {
   return `<svg x="${x}" y="${y}" width="${size}" height="${size}" viewBox="0 0 512 512">${mark.replace(/^.*?<svg[^>]*>/s,'').replace(/<\/svg>\s*$/,'')}</svg>`;
 }
 async function png(source, target, width, height) {
@@ -17,15 +18,13 @@ async function png(source, target, width, height) {
 async function main() {
   ['app-icons','favicon','logos','backgrounds','previews'].forEach(d => fs.mkdirSync(path.join(root,d), {recursive:true}));
   const dark = '#0B1020', light = '#F5F7FB';
-  const icon = bg => `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1024 1024"><rect width="1024" height="1024" rx="224" fill="${bg}"/>${markAt(112,112,800)}</svg>`;
-  svgFile('app-icon-dark.svg', icon(dark));
-  svgFile('app-icon-light.svg', icon(light));
-  svgFile('okyema-mark-dark.svg', mark);
-  svgFile('okyema-mark-light.svg', mark);
-  const logo = color => `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 280">${markAt(20,20,240)}<text x="305" y="175" fill="${color}" font-family="Inter,Arial,sans-serif" font-size="118" font-weight="500" letter-spacing="28">OKYEMA</text><text x="310" y="226" fill="${color}" opacity=".68" font-family="Inter,Arial,sans-serif" font-size="26" font-weight="400" letter-spacing="4">YOUR INTELLIGENT CHIEF OF STAFF</text></svg>`;
-  svgFile('logos/okyema-logo-on-dark.svg', logo('#FFFFFF'));
-  svgFile('logos/okyema-logo-on-light.svg', logo(dark));
-  svgFile('favicon/favicon.svg', mark);
+  const icon = (bg, selectedMark) => `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1024 1024"><rect width="1024" height="1024" rx="224" fill="${bg}"/>${markAt(selectedMark,112,112,800)}</svg>`;
+  svgFile('app-icon-dark.svg', icon(dark, markDark));
+  svgFile('app-icon-light.svg', icon(light, markLight));
+  const logo = (color, selectedMark) => `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 280">${markAt(selectedMark,20,20,240)}<text x="305" y="175" fill="${color}" font-family="Inter,Arial,sans-serif" font-size="118" font-weight="500" letter-spacing="28">OKYEMA</text><text x="310" y="226" fill="${color}" opacity=".68" font-family="Inter,Arial,sans-serif" font-size="26" font-weight="400" letter-spacing="4">YOUR INTELLIGENT CHIEF OF STAFF</text></svg>`;
+  svgFile('logos/okyema-logo-on-dark.svg', logo('#FFFFFF', markDark));
+  svgFile('logos/okyema-logo-on-light.svg', logo(dark, markLight));
+  svgFile('favicon/favicon.svg', markLight);
   const background = (mode, w, h) => {
     const isDark = mode === 'dark';
     const base = isDark ? '#0B1020' : '#F5F7FB';
@@ -40,7 +39,7 @@ async function main() {
       await png(file, file.replace('.svg','.png'), w, h);
     }
   }
-  const fg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1080 1080">${markAt(190,190,700)}</svg>`;
+  const fg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1080 1080">${markAt(markLight,190,190,700)}</svg>`;
   svgFile('app-icons/android-adaptive-foreground.svg', fg);
   svgFile('app-icons/android-adaptive-background-dark.svg', `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1080 1080"><rect width="1080" height="1080" fill="${dark}"/></svg>`);
   svgFile('app-icons/android-adaptive-background-light.svg', `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1080 1080"><rect width="1080" height="1080" fill="${light}"/></svg>`);

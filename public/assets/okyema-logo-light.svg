@@ -1,5 +1,0 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1500 360">
-  <defs><linearGradient id="g" x1="30" y1="30" x2="330" y2="330"><stop stop-color="#12BFD4"/><stop offset=".52" stop-color="#347DF2"/><stop offset="1" stop-color="#6546EE"/></linearGradient></defs>
-  <circle cx="180" cy="180" r="150" fill="url(#g)"/><path d="M155 82v77l66-77h62l-83 96 88 100h-64l-69-81v81h-50V82z" fill="#0B1020"/><path d="M155 159l66-77h36l-67 79-35 40z" fill="#fff"/>
-  <text x="390" y="220" fill="#0B1020" font-family="Inter,Arial,sans-serif" font-size="146" font-weight="600" letter-spacing="28">OKYEMA</text>
-</svg>

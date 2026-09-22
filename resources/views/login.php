@@ -15,7 +15,7 @@
 <body class="auth-body">
 <main class="auth-card">
     <div class="auth-brand">
-        <img class="auth-logo" src="<?= e($base) ?>/assets/okyema-mark.svg" alt="Okyema">
+        <img class="auth-logo" src="<?= e($base) ?>/assets/okyema-mark-light.svg" alt="Okyema">
         <h1 class="auth-title">Okyema</h1>
         <p class="auth-tagline">Your intelligent chief of staff</p>
     </div>

@@ -13,19 +13,19 @@
   "categories": ["productivity", "business"],
   "icons": [
     {
-      "src": "assets/app-icons/okyema-192.png",
+      "src": "assets/app-icons/okyema-dark-192.png",
       "sizes": "192x192",
       "type": "image/png",
       "purpose": "any"
     },
     {
-      "src": "assets/app-icons/okyema-512.png",
+      "src": "assets/app-icons/okyema-dark-512.png",
       "sizes": "512x512",
       "type": "image/png",
       "purpose": "any"
     },
     {
-      "src": "assets/app-icons/okyema-512.png",
+      "src": "assets/app-icons/okyema-dark-512.png",
       "sizes": "512x512",
       "type": "image/png",
       "purpose": "maskable"

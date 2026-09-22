@@ -17,7 +17,8 @@
     <header class="appbar">
         <div class="appbar__left">
             <button class="appbar__logo-btn" type="button" @click="tab='today'" aria-label="Go to Today">
-                <img class="appbar__logo" src="<?= e($base) ?>/assets/okyema-mark.svg" alt="Okyema">
+                <img class="appbar__logo appbar__logo--light" src="<?= e($base) ?>/assets/okyema-mark-light.svg" alt="Okyema">
+                <img class="appbar__logo appbar__logo--dark" src="<?= e($base) ?>/assets/okyema-mark-dark.svg" alt="Okyema">
             </button>
             <button class="context-chip" type="button" @click="contextMenu = !contextMenu" aria-label="Switch workspace context">
                 <span class="context-chip__dot"></span>
