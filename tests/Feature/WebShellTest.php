@@ -7,11 +7,8 @@ use Illuminate\Foundation\Testing\RefreshDatabase;
 
 uses(RefreshDatabase::class);
 
-test('guests land on the Okyema splash', function () {
-    $this->get('/')
-        ->assertOk()
-        ->assertSee('Okyema')
-        ->assertSee('chief of staff');
+test('guests are redirected straight to login', function () {
+    $this->get('/')->assertRedirect('/login');
 });
 
 test('signed-in users get the app shell', function () {

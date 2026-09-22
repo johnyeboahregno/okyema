@@ -321,38 +321,6 @@ a.list__item { text-decoration: none; }
 .field textarea { resize: vertical; }
 .field input:focus, .field textarea:focus, .field select:focus { outline: 2px solid var(--accent); outline-offset: 1px; }
 
-/* ── Splash ───────────────────────────────────────────── */
-.splash-body { margin: 0; background: var(--obsidian); }
-.splash-image {
-    position: relative; min-height: 100dvh; display: flex; flex-direction: column;
-    align-items: center; justify-content: center; text-align: center;
-    padding: 40px 24px; gap: 14px;
-    background:
-        radial-gradient(700px 420px at 50% -8%, rgba(116, 87, 255, .28), transparent 60%),
-        radial-gradient(520px 320px at 88% 112%, rgba(54, 215, 235, .16), transparent 60%),
-        var(--obsidian);
-}
-.splash__mark {
-    width: 96px; height: 96px; border-radius: 50%;
-    display: block;
-}
-.splash__title {
-    margin: 8px 0 0; color: var(--cloud);
-    font-size: 2.1rem; font-weight: 800; letter-spacing: .08em; text-transform: uppercase;
-}
-.splash__tagline { margin: 0; color: #9BA6C2; font-size: 1.05rem; }
-.splash__cta {
-    margin-top: 18px; width: 64px; height: 64px; border-radius: 50%;
-    background: linear-gradient(135deg, var(--violet), var(--cyan));
-    color: #fff; font-size: 1.7rem; display: flex; align-items: center; justify-content: center;
-    text-decoration: none; box-shadow: 0 10px 30px rgba(116, 87, 255, .4);
-    transition: transform .15s ease, box-shadow .15s ease;
-}
-.splash__cta:hover { transform: scale(1.06); box-shadow: 0 14px 38px rgba(54, 215, 235, .45); }
-.splash__cta:focus-visible { outline: 2px solid var(--cyan); outline-offset: 4px; }
-.splash__credit { color: #6B7690; font-size: .85rem; margin-top: 30px; }
-.splash__credit img { height: 16px; vertical-align: middle; }
-
 /* ── Misc ─────────────────────────────────────────────── */
 .hidden { display: none; }
 

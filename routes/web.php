@@ -21,11 +21,14 @@ Route::post('/logout', [AuthController::class, 'logout'])->name('logout');
 Route::get('/auth/google/redirect', [AuthController::class, 'redirectToGoogle']);
 Route::get('/auth/google/callback', [AuthController::class, 'handleGoogleCallback']);
 
-// The app shell. Guests land on the splash; signed-in users get the SPA.
+// The app shell. Guests go straight to login; signed-in users get the SPA.
 Route::get('/', function () {
+    if (! auth()->check()) {
+        return redirect('/login');
+    }
+
     $base = rtrim(request()->getBasePath(), '/');
-    $view = auth()->check() ? 'app' : 'welcome';
-    $__path = resource_path("views/{$view}.php");
+    $__path = resource_path('views/app.php');
     extract(['base' => $base]);
     ob_start();
     include $__path;
