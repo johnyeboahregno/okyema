@@ -4,7 +4,8 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>Sign in — Okyema</title>
-<link rel="icon" href="<?= e($base) ?>/assets/favicon.png" type="image/png">
+<link rel="icon" href="<?= e($base) ?>/assets/favicon/favicon.ico" sizes="32x32">
+<link rel="icon" href="<?= e($base) ?>/assets/favicon/favicon.svg" type="image/svg+xml">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
@@ -14,7 +15,7 @@
 <body class="auth-body">
 <main class="auth-card">
     <div class="auth-brand">
-        <div class="auth-logo">O</div>
+        <img class="auth-logo" src="<?= e($base) ?>/assets/okyema-mark.svg" alt="Okyema">
         <h1 class="auth-title">Okyema</h1>
         <p class="auth-tagline">Your intelligent chief of staff</p>
     </div>

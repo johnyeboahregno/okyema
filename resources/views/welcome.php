@@ -4,7 +4,8 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>Okyema</title>
-<link rel="icon" href="<?= e($base) ?>/assets/favicon.png" type="image/png">
+<link rel="icon" href="<?= e($base) ?>/assets/favicon/favicon.ico" sizes="32x32">
+<link rel="icon" href="<?= e($base) ?>/assets/favicon/favicon.svg" type="image/svg+xml">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
@@ -13,7 +14,7 @@
 </head>
 <body class="splash-body">
 <main class="splash-image">
-    <div class="splash__mark" aria-hidden="true">O</div>
+    <img class="splash__mark" src="<?= e($base) ?>/assets/okyema-mark-dark.svg" alt="">
     <h1 class="splash__title">Okyema</h1>
     <p class="splash__tagline">Your intelligent chief of staff</p>
     <a class="splash__cta" href="<?= e($base) ?>/login" aria-label="Continue to sign in"><span aria-hidden="true">→</span></a>

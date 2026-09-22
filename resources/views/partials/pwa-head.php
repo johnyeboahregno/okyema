@@ -15,7 +15,7 @@ $version = config('okyema.app.version', '0.1.0');
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="apple-mobile-web-app-title" content="Okyema">
-<link rel="apple-touch-icon" href="<?= e($base) ?>/assets/apple-touch-icon.png?v=<?= e($version) ?>">
+<link rel="apple-touch-icon" href="<?= e($base) ?>/assets/app-icons/okyema-180.png?v=<?= e($version) ?>">
 <script>
 /**
  * Installability, captured as early as possible. Chrome fires

@@ -94,9 +94,7 @@ button { font-family: inherit; }
 }
 .appbar__logo {
     width: 36px; height: 36px; border-radius: 50%;
-    background: linear-gradient(135deg, var(--violet), var(--cyan));
-    display: inline-flex; align-items: center; justify-content: center;
-    color: #fff; font-weight: 800; font-size: 1rem; letter-spacing: -.02em;
+    display: block;
 }
 
 .context-chip {
@@ -298,9 +296,7 @@ a.list__item { text-decoration: none; }
 .auth-brand { text-align: center; margin-bottom: 20px; }
 .auth-logo {
     width: 64px; height: 64px; border-radius: 50%; margin: 0 auto 12px;
-    background: linear-gradient(135deg, var(--violet), var(--cyan));
-    display: flex; align-items: center; justify-content: center;
-    color: #fff; font-weight: 800; font-size: 1.6rem;
+    display: block;
 }
 .auth-title { font-size: 1.6rem; margin: 0 0 2px; letter-spacing: -.02em; }
 .auth-tagline { color: var(--text-muted); margin: 0 0 8px; }
@@ -333,11 +329,8 @@ a.list__item { text-decoration: none; }
         var(--obsidian);
 }
 .splash__mark {
-    width: 92px; height: 92px; border-radius: 50%;
-    background: linear-gradient(135deg, var(--violet), var(--cyan));
-    display: flex; align-items: center; justify-content: center;
-    color: #fff; font-size: 2.5rem; font-weight: 800; letter-spacing: -.02em;
-    box-shadow: 0 14px 44px rgba(116, 87, 255, .35);
+    width: 96px; height: 96px; border-radius: 50%;
+    display: block;
 }
 .splash__title {
     margin: 8px 0 0; color: var(--cloud);

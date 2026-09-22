@@ -4,7 +4,8 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>Okyema</title>
-<link rel="icon" href="<?= e($base) ?>/assets/favicon.png" type="image/png">
+<link rel="icon" href="<?= e($base) ?>/assets/favicon/favicon.ico" sizes="32x32">
+<link rel="icon" href="<?= e($base) ?>/assets/favicon/favicon.svg" type="image/svg+xml">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
@@ -16,7 +17,7 @@
     <header class="appbar">
         <div class="appbar__left">
             <button class="appbar__logo-btn" type="button" @click="tab='today'" aria-label="Go to Today">
-                <span class="appbar__logo">O</span>
+                <img class="appbar__logo" src="<?= e($base) ?>/assets/okyema-mark.svg" alt="Okyema">
             </button>
             <button class="context-chip" type="button" @click="contextMenu = !contextMenu" aria-label="Switch workspace context">
                 <span class="context-chip__dot"></span>
