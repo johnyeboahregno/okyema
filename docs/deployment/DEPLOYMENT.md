@@ -15,7 +15,8 @@ Copy `.env.example` to `.env` and set, at minimum:
 - `GOOGLE_REDIRECT_URI=https://john.okyema.work/auth/google/callback`
   (registered verbatim in the Google Cloud console)
 
-See `GOOGLE_SIGNIN.md`-style notes in `.env.example`.
+See `GOOGLE_SIGNIN.md`-style notes in `.env.example`, and the full sign-in
+runbook in [`GOOGLE_SIGNIN.md`](GOOGLE_SIGNIN.md).
 
 ## Build & release
 
