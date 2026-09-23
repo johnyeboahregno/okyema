@@ -49,6 +49,11 @@ class User extends Authenticatable
         return $this->hasOne(Profile::class);
     }
 
+    public function connectorAccounts(): HasMany
+    {
+        return $this->hasMany(ConnectorAccount::class);
+    }
+
     public function memberships(): HasMany
     {
         return $this->hasMany(Membership::class);
