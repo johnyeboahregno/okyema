@@ -23,6 +23,10 @@
 - **Today briefing + accessibility:** the dashboard now returns a factual
   briefing, recent decisions and travel alerts; the shell gained visible
   focus-visible styles and `aria-current` on the active nav item.
+- **Notion theme (light + dark):** both themes now match Notion — white/neutral
+  surfaces, warm gray text, Notion blue (`#2383E2`) accent and Notion status
+  colours — with flat components and no border radius or shadows. PWA chrome
+  colour follows the active theme.
 - **Tests:** 74 passing (238 assertions).
 
 ### Known limitations

@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>Okyema</title>
 <link rel="icon" href="<?= e($base) ?>/assets/favicon/favicon.ico" sizes="32x32">
-<link rel="icon" href="<?= e($base) ?>/assets/favicon/favicon.svg" type="image/svg+xml">
+<link rel="icon" href="<?= e($base) ?>/assets/favicon/favicon-32.png" sizes="32x32" type="image/png">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
@@ -17,8 +17,8 @@
     <header class="appbar">
         <div class="appbar__left">
             <button class="appbar__logo-btn" type="button" @click="tab='today'" aria-label="Go to Today">
-                <img class="appbar__logo appbar__logo--light" src="<?= e($base) ?>/assets/okyema-mark-light.svg" alt="Okyema">
-                <img class="appbar__logo appbar__logo--dark" src="<?= e($base) ?>/assets/okyema-mark-dark.svg" alt="Okyema">
+                <img class="appbar__logo appbar__logo--light" src="<?= e($base) ?>/assets/app-icon-light.svg" alt="Okyema">
+                <img class="appbar__logo appbar__logo--dark" src="<?= e($base) ?>/assets/app-icon-dark.svg" alt="Okyema">
             </button>
             <button class="context-chip" type="button" @click="contextMenu = !contextMenu" aria-label="Switch workspace context">
                 <span class="context-chip__dot"></span>
@@ -140,7 +140,8 @@
             </button>
             <form v-if="showMeetingForm" class="inline-form" @submit.prevent="submitMeeting">
                 <label class="field"><span>Title</span><input v-model="meetingDraft.title" required></label>
-                <label class="field"><span>When (optional)</span><input type="datetime-local" v-model="meetingDraft.starts_at"></label>
+                <label class="field"><span>Date (optional)</span><input type="date" v-model="meetingDraft.starts_on"></label>
+                <label class="field"><span>Time (optional)</span><input type="time" v-model="meetingDraft.starts_time"></label>
                 <button type="submit" class="btn btn--primary btn--block">Create meeting</button>
             </form>
 
@@ -438,13 +439,15 @@
 
     <!-- Navigation -->
     <nav class="nav" aria-label="Primary">
-        <button v-for="item in navItems" :key="item.key"
-                class="nav__item" :class="{'nav__item--active': tab === item.key}"
-                type="button" @click="tab = item.key"
-                :aria-current="tab === item.key ? 'page' : undefined">
-            <span class="nav__icon" aria-hidden="true">{{ item.icon }}</span>
-            <span>{{ item.label }}</span>
-        </button>
+        <div class="nav__list">
+            <button v-for="item in navItems" :key="item.key"
+                    class="nav__item" :class="{'nav__item--active': tab === item.key}"
+                    type="button" @click="tab = item.key"
+                    :aria-current="tab === item.key ? 'page' : undefined">
+                <span class="nav__icon" aria-hidden="true">{{ item.icon }}</span>
+                <span>{{ item.label }}</span>
+            </button>
+        </div>
         <button class="nav__capture" type="button" aria-label="Quick capture" @click="capture()">+</button>
     </nav>
 </div>
@@ -489,7 +492,7 @@ Vue.createApp({
             meetingDetail: null,
             meetingGenerated: null,
             showMeetingForm: false,
-            meetingDraft: { title: '', starts_at: '' },
+            meetingDraft: { title: '', starts_on: '', starts_time: '' },
             meetingNoteDraft: '',
             generating: false,
             actions: [],
@@ -599,10 +602,13 @@ Vue.createApp({
         closeMeeting() { this.meetingDetail = null; this.meetingGenerated = null; },
         async submitMeeting() {
             const payload = { title: this.meetingDraft.title };
-            if (this.meetingDraft.starts_at) payload.starts_at = new Date(this.meetingDraft.starts_at).toISOString();
+            if (this.meetingDraft.starts_on) {
+                const time = this.meetingDraft.starts_time || '00:00';
+                payload.starts_at = new Date(`${this.meetingDraft.starts_on}T${time}`).toISOString();
+            }
             await api('POST', '/api/meetings', payload);
             this.showMeetingForm = false;
-            this.meetingDraft = { title: '', starts_at: '' };
+            this.meetingDraft = { title: '', starts_on: '', starts_time: '' };
             await this.loadMeetings();
         },
         async addMeetingNote() {
@@ -781,6 +787,8 @@ Vue.createApp({
             localStorage.setItem('okyema.theme', stored);
             const dark = stored === 'dark' || (stored === 'system' && window.matchMedia('(prefers-color-scheme: dark)').matches);
             document.documentElement.setAttribute('data-theme', dark ? 'dark' : 'light');
+            const themeColor = document.querySelector('meta[name="theme-color"]');
+            if (themeColor) themeColor.setAttribute('content', dark ? '#0B1020' : '#F5F7FB');
         },
         capture() { this.tab = 'expenses'; },
         async logout() {

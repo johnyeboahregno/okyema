@@ -13,7 +13,7 @@ return [
     | suffix for the CSS/favicon and is shown in the user menu.
     */
     'app' => [
-        'version' => '0.1.0',
+        'version' => '0.1.1',
         'name' => env('APP_NAME', 'Okyema'),
         'tagline' => 'Your intelligent chief of staff',
         'powered_by' => 'Powered by Regno AI',

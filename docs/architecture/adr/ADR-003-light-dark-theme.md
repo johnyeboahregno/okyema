@@ -22,3 +22,14 @@ design tokens.
 
 - Contrast is verified per theme.
 - `prefers-reduced-motion` is honoured alongside.
+
+## Update — Notion theme, light + dark (2026-09-23)
+
+Both token sets now follow Notion's palette. Light: white surfaces,
+`#37352F` text, `#787774` muted, `#E9E9E7` strokes, Notion blue (`#2383E2`)
+accent and Notion status colours (`#EB5757` / `#F2994A` / `#219653`). Dark:
+`#191919` background, `#202020` surfaces, `#D4D4D4` / `#9B9B9B` text, same
+blue accent. The hero card, capture button, auth background and badge tints
+are flat (no gradients). All border radius is removed system-wide (a global
+`border-radius: 0` reset), and shadows are off. PWA `theme-color` and the
+manifest colours follow.
