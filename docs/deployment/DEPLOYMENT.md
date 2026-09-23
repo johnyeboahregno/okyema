@@ -48,6 +48,27 @@ The shared Compose stack lives at `$HOME/courtly` (`COMPOSE_DIR`) and also runs
 the reverse proxy and the `okyema-mysql` database. Point Caddy at
 `okyema-app:80` for the `john.okyema.work` domain.
 
+### Shared-stack prerequisites (one-time VPS setup)
+
+The `okyema-app`, `okyema-queue` and `okyema-mysql` services are defined in
+Courtly's `docker-compose.yml` (this repo ships no Compose file of its own),
+and `john.okyema.work` is fronted from Courtly's `docker/caddy/Caddyfile`.
+Before the first deploy:
+
+1. In `~/courtly/.env` set the MySQL credentials the `okyema-mysql` container
+   reads: `OKYEMA_DB_USERNAME`, `OKYEMA_DB_PASSWORD`, `OKYEMA_DB_ROOT_PASSWORD`
+   (see `~/courtly/.env.docker.example`).
+2. In `~/okyema/.env` set the app values: `APP_ENV=production`,
+   `APP_DEBUG=false`, `APP_URL=https://john.okyema.work`, `APP_KEY`
+   (`php artisan key:generate --show`), and
+   `DB_CONNECTION=mysql` / `DB_HOST=okyema-mysql` / `DB_DATABASE=okyema` /
+   `DB_USERNAME` + `DB_PASSWORD` matching step 1. Also add
+   `SANCTUM_STATEFUL_DOMAINS=john.okyema.work` and the production
+   `GOOGLE_REDIRECT_URI`.
+3. The `.dockerignore` keeps `vendor/`, `.env` and the SQLite dev database out
+   of the production image, so `COPY . .` can't clobber the Composer-built
+   `vendor/` or bake secrets in.
+
 ## Health and rollback
 
 - `/api/connectors` shows connector health; readiness is checked before swap.

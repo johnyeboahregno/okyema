@@ -1,0 +1,13 @@
+.env
+.env.*
+.git
+.gitignore
+vendor
+node_modules
+database/*.sqlite
+storage
+test-results
+playwright-report
+.phpunit.result.cache
+Dockerfile
+docker-compose.yml
