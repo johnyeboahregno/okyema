@@ -214,7 +214,12 @@ button { font-family: inherit; }
 @keyframes drawerIn { from { transform: translateX(-100%); } to { transform: translateX(0); } }
 @keyframes drawerFade { from { opacity: 0; } to { opacity: 1; } }
 
-.screen { max-width: 1200px; margin: 0 auto; padding: 16px; padding-bottom: calc(88px + env(safe-area-inset-bottom, 0px)); }
+.screen {
+    width: 100%;
+    min-height: calc(100dvh - var(--nav-height));
+    padding: 16px;
+    padding-bottom: calc(88px + env(safe-area-inset-bottom, 0px));
+}
 
 /* ── Cards ─────────────────────────────────────────────── */
 .card {
