@@ -16,13 +16,19 @@
 <div id="app" v-cloak>
     <header class="appbar">
         <div class="appbar__left">
+            <button class="hamburger" type="button" @click.stop="navOpen = !navOpen"
+                    :aria-expanded="navOpen ? 'true' : 'false'" aria-controls="primary-drawer" aria-label="Open menu">
+                <span class="hamburger__line"></span>
+                <span class="hamburger__line"></span>
+                <span class="hamburger__line"></span>
+            </button>
             <button class="appbar__logo-btn" type="button" @click="tab='today'" aria-label="Go to Today">
                 <img class="appbar__logo appbar__logo--light" src="<?= e($base) ?>/assets/app-icon-light.svg" alt="Okyema">
                 <img class="appbar__logo appbar__logo--dark" src="<?= e($base) ?>/assets/app-icon-dark.svg" alt="Okyema">
             </button>
             <button class="context-chip" type="button" @click.stop="contextMenu = !contextMenu" aria-label="Switch workspace context">
                 <span class="context-chip__dot"></span>
-                <span>{{ activeContext ? activeContext.name : '…' }}</span>
+                <span class="context-chip__label">{{ activeContext ? activeContext.name : '…' }}</span>
             </button>
             <div class="user-menu" v-if="contextMenu" style="top:56px;right:auto;left:120px" @click.stop>
                 <button class="user-menu__item" v-for="c in contexts" :key="c.key"
@@ -65,6 +71,22 @@
             </div>
         </div>
     </header>
+
+    <button class="drawer-backdrop" v-if="navOpen" type="button" aria-label="Close menu" @click="navOpen = false"></button>
+    <aside id="primary-drawer" class="drawer" v-if="navOpen" @click.stop>
+        <div class="drawer__head">
+            <img class="appbar__logo appbar__logo--light" src="<?= e($base) ?>/assets/app-icon-light.svg" alt="Okyema">
+            <img class="appbar__logo appbar__logo--dark" src="<?= e($base) ?>/assets/app-icon-dark.svg" alt="Okyema">
+            <span class="drawer__brand">Okyema</span>
+        </div>
+        <button v-for="item in navItems" :key="item.key"
+                class="drawer__item" :class="{'drawer__item--active': tab === item.key}"
+                type="button" @click="selectTab(item.key)"
+                :aria-current="tab === item.key ? 'page' : undefined">
+            <span class="drawer__icon" aria-hidden="true">{{ item.icon }}</span>
+            <span>{{ item.label }}</span>
+        </button>
+    </aside>
 
     <p class="app-notice" v-if="notice" role="status" @click="notice = ''">{{ notice }}</p>
 
@@ -502,8 +524,15 @@
 <script>
 const BASE_URL = <?= json_encode($base) ?>;
 
+function csrfToken() {
+    const match = document.cookie.match(/(?:^|;\s*)XSRF-TOKEN=([^;]*)/);
+    return match ? decodeURIComponent(match[1]) : '';
+}
+
 async function api(method, path, body) {
-    const init = { method, headers: {} };
+    const init = { method, headers: {}, credentials: 'include' };
+    const token = csrfToken();
+    if (token) init.headers['X-XSRF-TOKEN'] = token;
     if (body !== undefined) {
         init.headers['Content-Type'] = 'application/json';
         init.body = JSON.stringify(body);
@@ -526,6 +555,7 @@ Vue.createApp({
                 unprocessed_receipts: 0, meetings_today: 0,
             },
             tab: 'today',
+            navOpen: false,
             contextMenu: false,
             userMenu: false,
             notice: '',
@@ -867,7 +897,13 @@ Vue.createApp({
             const form = new FormData();
             form.append('receipt', file);
             try {
-                await fetch(BASE_URL + '/api/receipts', { method: 'POST', body: form });
+                const token = csrfToken();
+                await fetch(BASE_URL + '/api/receipts', {
+                    method: 'POST',
+                    credentials: 'include',
+                    headers: token ? { 'X-XSRF-TOKEN': token } : {},
+                    body: form,
+                });
             } catch (e) { /* ignore */ }
             event.target.value = '';
             await this.loadReceipts();
@@ -1043,6 +1079,10 @@ Vue.createApp({
             const themeColor = document.querySelector('meta[name="theme-color"]');
             if (themeColor) themeColor.setAttribute('content', dark ? '#0B1020' : '#F5F7FB');
         },
+        selectTab(key) {
+            this.tab = key;
+            this.navOpen = false;
+        },
         capture() { this.tab = 'expenses'; },
         async logout() {
             try { await api('POST', '/api/logout'); } catch (e) { /* ignore */ }
@@ -1122,6 +1162,7 @@ Vue.createApp({
             this.startTour();
         },
         onTourKey(e) {
+            if (e.key === 'Escape') this.navOpen = false;
             if (!this.tour.active) return;
             if (e.key === 'Escape') this.endTour(false);
             if (e.key === 'ArrowRight') this.nextTourStep();
@@ -1133,6 +1174,7 @@ Vue.createApp({
          * the panels stop propagation, so only genuine outside clicks arrive.
          */
         onDocumentClick() {
+            this.navOpen = false;
             this.userMenu = false;
             this.contextMenu = false;
         },

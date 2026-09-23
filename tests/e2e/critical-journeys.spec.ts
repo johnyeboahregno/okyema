@@ -17,8 +17,11 @@ async function signIn(page: Page) {
   await expect(page.locator('.appbar')).toBeVisible();
 }
 
-function navButton(page: Page, label: string) {
-  return page.locator('.nav__item', { hasText: label });
+async function navButton(page: Page, label: string) {
+  // The suite runs at a phone viewport (480×900), where primary navigation
+  // lives behind the hamburger drawer.
+  await page.click('.hamburger');
+  await page.locator('.drawer__item', { hasText: label }).click();
 }
 
 test('sign in and select a context', async ({ page }) => {
@@ -37,14 +40,14 @@ test('view today and the timeline', async ({ page }) => {
   await signIn(page);
 
   await expect(page.locator('.hero')).toBeVisible();
-  await navButton(page, 'Timeline').click();
+  await navButton(page, 'Timeline');
   await expect(page.locator('.greet')).toContainText('Timeline');
 });
 
 test('open a meeting, generate a sourced brief and convert a decision', async ({ page }) => {
   await signIn(page);
 
-  await navButton(page, 'Meetings').click();
+  await navButton(page, 'Meetings');
   await page.locator('.list__item', { hasText: 'Regno product kickoff' }).click();
 
   await expect(page.locator('.meeting-detail')).toBeVisible();
@@ -59,7 +62,7 @@ test('open a meeting, generate a sourced brief and convert a decision', async ({
 test('drafting a reply requires approval and never sends immediately', async ({ page }) => {
   await signIn(page);
 
-  await navButton(page, 'Inbox').click();
+  await navButton(page, 'Inbox');
   await page.locator('.list__item').first().click();
 
   await page.fill('textarea', 'Here are the numbers.');
@@ -71,7 +74,7 @@ test('drafting a reply requires approval and never sends immediately', async ({ 
 test('capture a receipt and confirm it into an expense', async ({ page }) => {
   await signIn(page);
 
-  await navButton(page, 'Expenses').click();
+  await navButton(page, 'Expenses');
 
   // Upload a fake receipt through the hidden file input.
   await page.setInputFiles('input[type="file"]', {
@@ -91,7 +94,7 @@ test('capture a receipt and confirm it into an expense', async ({ page }) => {
 test('workspace isolation — a Regno meeting never appears in Launchpad', async ({ page }) => {
   await signIn(page);
 
-  await navButton(page, 'Meetings').click();
+  await navButton(page, 'Meetings');
   await expect(page.locator('.list__item', { hasText: 'Regno product kickoff' })).toBeVisible();
 
   await page.click('.context-chip');

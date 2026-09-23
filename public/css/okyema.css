@@ -102,6 +102,18 @@ button { font-family: inherit; }
 
 .appbar__left { display: flex; align-items: center; gap: 12px; min-width: 0; }
 
+.hamburger {
+    flex: 0 0 auto;
+    display: inline-flex; flex-direction: column; align-items: center; justify-content: center; gap: 4px;
+    width: 40px; height: 40px; padding: 0;
+    border: 1px solid var(--stroke); background: var(--surface);
+    cursor: pointer;
+}
+.hamburger__line { display: block; width: 18px; height: 2px; background: var(--text); }
+@media (min-width: 1100px) {
+    .hamburger { display: none; }
+}
+
 .appbar__logo-btn {
     border: 0; background: none; padding: 0; cursor: pointer;
     display: inline-flex; border-radius: 10px;
@@ -119,8 +131,10 @@ button { font-family: inherit; }
     border: 1px solid var(--stroke); background: var(--surface);
     color: var(--text); border-radius: 999px; padding: 6px 12px;
     font-size: .82rem; font-weight: 500; cursor: pointer;
+    max-width: min(170px, 42vw); min-width: 0;
 }
-.context-chip__dot { width: 8px; height: 8px; border-radius: 50%; background: var(--accent); }
+.context-chip__dot { width: 8px; height: 8px; flex: 0 0 8px; border-radius: 50%; background: var(--accent); }
+.context-chip__label { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 
 .appbar__user { display: flex; align-items: center; gap: 8px; }
 
@@ -163,7 +177,44 @@ button { font-family: inherit; }
 }
 .user-menu__form .btn { padding: 8px 12px; font-size: .85rem; }
 
-.screen { max-width: 1200px; margin: 0 auto; padding: 16px; padding-bottom: calc(var(--nav-height) + env(safe-area-inset-bottom, 0px) + 24px); }
+/* ── Navigation drawer (hamburger) ───────────────────── */
+.drawer-backdrop {
+    position: fixed; inset: 0; z-index: 40;
+    background: rgba(11, 16, 32, .45);
+    border: 0; padding: 0; cursor: pointer;
+    animation: drawerFade .18s ease;
+}
+.drawer {
+    position: fixed; top: 0; bottom: 0; left: 0; z-index: 45;
+    width: min(300px, 84vw);
+    background: var(--surface);
+    border-right: 1px solid var(--stroke);
+    padding: 16px 12px calc(16px + env(safe-area-inset-bottom, 0px));
+    overflow-y: auto;
+    display: flex; flex-direction: column; gap: 2px;
+    animation: drawerIn .2s cubic-bezier(.4, 0, .2, 1);
+}
+.drawer__head {
+    display: flex; align-items: center; gap: 10px;
+    padding: 4px 10px 16px; margin-bottom: 8px;
+    border-bottom: 1px solid var(--stroke);
+}
+.drawer__head .appbar__logo { width: 30px; height: 30px; }
+.drawer__brand { font-weight: 700; letter-spacing: -.01em; }
+.drawer__item {
+    display: flex; align-items: center; gap: 12px; width: 100%;
+    padding: 12px 10px; text-align: left;
+    border: 0; background: none; color: var(--text-muted);
+    font-size: .95rem; font-weight: 500; cursor: pointer;
+}
+.drawer__item:hover { background: var(--surface-2); }
+.drawer__item--active { color: var(--accent-strong); background: var(--accent-soft); }
+.drawer__icon { width: 24px; text-align: center; font-size: 1.1rem; }
+
+@keyframes drawerIn { from { transform: translateX(-100%); } to { transform: translateX(0); } }
+@keyframes drawerFade { from { opacity: 0; } to { opacity: 1; } }
+
+.screen { max-width: 1200px; margin: 0 auto; padding: 16px; padding-bottom: calc(88px + env(safe-area-inset-bottom, 0px)); }
 
 /* ── Cards ─────────────────────────────────────────────── */
 .card {
@@ -258,61 +309,57 @@ a.list__item { text-decoration: none; }
 .btn--block { width: 100%; }
 .btn--ghost { background: transparent; border-color: var(--stroke); color: var(--text); }
 
-/* ── Navigation ───────────────────────────────────────── */
+/* ── Navigation ─────────────────────────────────────────
+   Narrow screens (<1100px): primary navigation lives in the hamburger
+   drawer; the quick-capture button stays on screen as a floating action
+   button. Wide screens keep the persistent sidebar. */
 .nav {
-    position: fixed; left: 0; right: 0; bottom: 0; z-index: 30;
-    background: color-mix(in srgb, var(--surface) 92%, transparent);
-    backdrop-filter: blur(12px);
-    border-top: 1px solid var(--stroke);
-    display: flex; align-items: stretch; justify-content: flex-start;
-    padding-bottom: env(safe-area-inset-bottom, 0px);
-    height: calc(var(--nav-height) + env(safe-area-inset-bottom, 0px));
+    position: fixed; right: 16px; bottom: calc(16px + env(safe-area-inset-bottom, 0px));
+    width: 56px; height: 56px;
+    z-index: 35;
+    pointer-events: none;
 }
-/* The tab list scrolls on narrow screens; the capture button sits outside it
-   so it is pinned and never clipped. */
-.nav__list {
-    display: flex; align-items: stretch; justify-content: flex-start;
-    flex: 1 1 auto; min-width: 0;
-    overflow-x: auto; -webkit-overflow-scrolling: touch; scrollbar-width: none;
-}
-.nav__list::-webkit-scrollbar { display: none; }
-.nav__item {
-    flex: 0 0 auto; min-width: 58px; border: 0; background: none; cursor: pointer;
-    display: flex; flex-direction: column; align-items: center; justify-content: center;
-    gap: 3px; color: var(--text-muted); font-size: .68rem; font-weight: 500; padding: 4px 2px;
-}
-.nav__item--active { color: var(--accent-strong); }
-.nav__icon { font-size: 1.25rem; line-height: 1; }
+.nav__list { display: none; }
 .nav__capture {
-    flex: 0 0 56px; width: 56px;
+    pointer-events: auto;
+    display: flex; align-items: center; justify-content: center;
+    width: 56px; height: 56px;
     border: 0;
     background: var(--accent-fill);
-    color: #fff; font-size: 1.4rem; font-weight: 600; cursor: pointer;
-    display: flex; align-items: center; justify-content: center;
-    box-shadow: var(--shadow);
+    color: #fff; font-size: 1.5rem; font-weight: 600; cursor: pointer;
+    box-shadow: 0 8px 24px rgba(11, 16, 32, .30);
 }
 
-/* Tablet: navigation rail */
+/* Tablet and up: a little more breathing room in the header. */
 @media (min-width: 768px) {
     .appbar { padding: 12px 20px; }
-    .screen { padding-left: 96px; padding-bottom: 24px; }
-    .nav {
-        top: 0; bottom: 0; right: auto; width: 76px; height: 100%;
-        flex-direction: column; justify-content: flex-start; gap: 4px;
-        border-top: 0; border-right: 1px solid var(--stroke); padding-top: 72px;
-    }
-    .nav__list { display: contents; }
-    .nav__item { flex: 0 0 auto; padding: 12px 4px; }
-    .nav__capture { position: static; flex: 0 0 48px; width: 48px; height: 48px; margin: 8px 0; }
 }
 
 /* Desktop: persistent sidebar */
 @media (min-width: 1100px) {
-    .nav { width: 240px; align-items: stretch; padding-top: 72px; }
-    .nav__item { flex-direction: row; justify-content: flex-start; gap: 12px; padding: 12px 20px; font-size: .9rem; }
-    .nav__icon { font-size: 1.15rem; width: 22px; text-align: center; }
-    .nav__capture { flex: 0 0 auto; width: auto; height: auto; border-radius: 12px; margin: 8px 16px; padding: 12px; font-size: .9rem; gap: 8px; }
-    .screen { padding-left: 280px; }
+    .nav {
+        top: 0; bottom: 0; left: 0; right: auto;
+        width: 240px; height: 100%;
+        pointer-events: auto;
+        display: flex; flex-direction: column; justify-content: flex-start; gap: 4px;
+        background: color-mix(in srgb, var(--surface) 92%, transparent);
+        backdrop-filter: blur(12px);
+        border-right: 1px solid var(--stroke);
+        padding: 72px 0 0;
+    }
+    .nav__list { display: flex; flex-direction: column; align-items: stretch; width: 100%; }
+    .nav__item {
+        display: flex; flex-direction: row; align-items: center; justify-content: flex-start; gap: 12px;
+        padding: 12px 20px; font-size: .9rem; font-weight: 500;
+        color: var(--text-muted); border: 0; background: none; cursor: pointer;
+    }
+    .nav__item--active { color: var(--accent-strong); }
+    .nav__icon { font-size: 1.15rem; width: 22px; text-align: center; line-height: 1; }
+    .nav__capture {
+        flex: 0 0 auto; width: auto; height: auto; margin: 8px 16px; padding: 12px;
+        font-size: .9rem; gap: 8px; box-shadow: none;
+    }
+    .screen { padding-left: 280px; padding-bottom: 24px; }
 }
 
 /* ── Auth screens ─────────────────────────────────────── */
