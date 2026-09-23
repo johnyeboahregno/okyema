@@ -19,11 +19,10 @@ final class TripService
     /**
      * @return Collection<int, Trip>
      */
-    public function index(User $user, WorkspaceContext $context): Collection
+    public function index(User $user, ?WorkspaceContext $context): Collection
     {
         return Trip::query()
-            ->where('user_id', $user->id)
-            ->where('workspace_context_id', $context->id)
+            ->forContext($user, $context)
             ->with('segments')
             ->orderBy('starts_on')
             ->get();

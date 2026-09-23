@@ -20,27 +20,38 @@
                 <img class="appbar__logo appbar__logo--light" src="<?= e($base) ?>/assets/app-icon-light.svg" alt="Okyema">
                 <img class="appbar__logo appbar__logo--dark" src="<?= e($base) ?>/assets/app-icon-dark.svg" alt="Okyema">
             </button>
-            <button class="context-chip" type="button" @click="contextMenu = !contextMenu" aria-label="Switch workspace context">
+            <button class="context-chip" type="button" @click.stop="contextMenu = !contextMenu" aria-label="Switch workspace context">
                 <span class="context-chip__dot"></span>
                 <span>{{ activeContext ? activeContext.name : '…' }}</span>
             </button>
-            <div class="user-menu" v-if="contextMenu" style="top:56px;right:auto;left:120px" @click.self="contextMenu = false">
-                <button class="user-menu__item" v-for="c in contexts" :key="c.id"
+            <div class="user-menu" v-if="contextMenu" style="top:56px;right:auto;left:120px" @click.stop>
+                <button class="user-menu__item" v-for="c in contexts" :key="c.key"
                         :class="{'user-menu__item--muted': c.is_active}"
                         @click="activateContext(c)">
                     {{ c.name }} <span v-if="c.is_active">✓</span>
                 </button>
+
+                <form class="user-menu__form" @submit.prevent="createContext">
+                    <input v-model="newContextName" placeholder="New workspace…" maxlength="60" aria-label="New workspace name">
+                    <button type="submit" class="btn btn--primary" :disabled="!newContextName.trim()">Add</button>
+                </form>
+
+                <template v-if="activeContext && activeContext.id !== null">
+                    <button class="user-menu__item" @click="renameContext(activeContext)">Rename “{{ activeContext.name }}”</button>
+                    <button class="user-menu__item user-menu__item--danger" v-if="realContexts.length > 1"
+                            @click="deleteContext(activeContext)">Delete “{{ activeContext.name }}”</button>
+                </template>
             </div>
         </div>
         <div class="appbar__user">
             <button class="avatar" type="button" @click="toggleTheme" :aria-label="'Theme: ' + themeLabel">
                 {{ themeIcon }}
             </button>
-            <button class="avatar" type="button" @click="userMenu = !userMenu" aria-label="Account menu">
+            <button class="avatar" type="button" @click.stop="userMenu = !userMenu" aria-label="Account menu">
                 <img v-if="gravatarUrl" :src="gravatarUrl" @error="gravatarUrl = ''" alt="">
                 <span v-else>{{ initials }}</span>
             </button>
-            <div class="user-menu" v-if="userMenu" @click.self="userMenu = false">
+            <div class="user-menu" v-if="userMenu" @click.stop>
                 <div class="user-menu__head">
                     <strong>{{ me.name }}</strong>
                     <span class="muted">{{ me.email }}</span>
@@ -48,11 +59,14 @@
                 <button class="user-menu__item" @click="userMenu = false; tab='settings'">Settings</button>
                 <p class="user-menu__item user-menu__item--muted" v-if="install.installed">✓ Installed on this device</p>
                 <button class="user-menu__item" v-else @click="installApp">Install on device</button>
+                <button class="user-menu__item" @click="userMenu = false; replayTour()">Show me the tour</button>
                 <button class="user-menu__item user-menu__item--danger" @click="logout">Log out</button>
                 <p class="user-menu__version">v<?= e(config('okyema.app.version')) ?></p>
             </div>
         </div>
     </header>
+
+    <p class="app-notice" v-if="notice" role="status" @click="notice = ''">{{ notice }}</p>
 
     <main class="screen">
 
@@ -450,6 +464,38 @@
         </div>
         <button class="nav__capture" type="button" aria-label="Quick capture" @click="capture()">+</button>
     </nav>
+
+    <!-- First-use tour: a spotlight over the live UI, one step at a time -->
+    <div class="tour" v-if="tour.active && tourStep" role="dialog" aria-modal="true" :aria-label="tourStep.title">
+        <div class="tour__shade" v-if="!tour.rect" @click="skipTour"></div>
+        <div class="tour__spot" v-if="tour.rect" :style="tourSpotStyle"></div>
+
+        <div class="tour__card" :class="{'tour__card--center': !tour.rect}" :style="tourCardStyle">
+            <div class="tour__head">
+                <span class="tour__badge">{{ tour.index + 1 }} / {{ tourTotal }}</span>
+                <button type="button" class="tour__close" @click="skipTour" aria-label="Close the tour">×</button>
+            </div>
+
+            <h4 class="tour__title">{{ tourStep.title }}</h4>
+            <p class="tour__body">{{ tourStep.body }}</p>
+
+            <div class="tour__dots" aria-hidden="true">
+                <span v-for="(s, i) in tourTotal" :key="i" class="tour__dot" :class="{'tour__dot--on': i === tour.index, 'tour__dot--done': i < tour.index}"></span>
+            </div>
+
+            <div class="tour__actions">
+                <button v-if="tour.index > 0" class="btn btn--ghost" @click="prevTourStep">Back</button>
+                <button class="btn btn--primary tour__next" @click="nextTourStep">
+                    {{ tour.index === tourTotal - 1 ? 'Start using Okyema' : 'Next' }}
+                </button>
+            </div>
+
+            <div class="tour__foot">
+                <button class="tour__link" @click="endTour(true)" :disabled="tour.saving">Never show me this again</button>
+                <button class="tour__link tour__link--dim" @click="skipTour">Skip for now</button>
+            </div>
+        </div>
+    </div>
 </div>
 
 <script src="https://cdn.jsdelivr.net/npm/vue@3.4.38/dist/vue.global.prod.js"></script>
@@ -482,6 +528,8 @@ Vue.createApp({
             tab: 'today',
             contextMenu: false,
             userMenu: false,
+            notice: '',
+            newContextName: '',
             gravatarUrl: '',
             theme: 'system',
             install: { installed: false, prompt: null },
@@ -519,6 +567,121 @@ Vue.createApp({
             automationDraft: { name: '', trigger: 'action_due_soon' },
             settings: { display_name: '', timezone: '' },
             connectors: [],
+            tour: { active: false, index: 0, rect: null, above: false, saving: false },
+            // First sign-in walks the whole app: the workspace boundaries it is
+            // built on, every screen, then how to get back here.
+            tourSteps: [
+                {
+                    key: 'welcome',
+                    title: 'Welcome to Okyema 👋',
+                    body: 'Your intelligent chief of staff. Thirty seconds to show you the whole app — leave at any point, or ask me never to show it again.',
+                },
+                {
+                    key: 'contexts',
+                    tab: 'today',
+                    target: '.context-chip',
+                    title: 'Your workspaces',
+                    body: 'Everything lives in one of three boundaries — Regno, Launchpad or Personal. Switch here and every screen, connector and AI answer follows.',
+                },
+                {
+                    key: 'capture',
+                    tab: 'today',
+                    target: '.nav__capture',
+                    title: 'Capture anything',
+                    body: 'The green + takes a receipt straight from the camera and files it for you. It is always one tap away.',
+                },
+                {
+                    key: 'briefing',
+                    tab: 'today',
+                    target: '.hero',
+                    title: 'Today, at a glance',
+                    body: 'Your next meeting or the day’s briefing. Below it: overdue actions, messages waiting on a reply, and unprocessed receipts.',
+                },
+                {
+                    key: 'todaycards',
+                    tab: 'today',
+                    target: '.card',
+                    title: 'What needs you',
+                    body: 'Counts, not noise. The briefing line, recent decisions and the facts behind today sit just below.',
+                },
+                {
+                    key: 'timeline',
+                    tab: 'timeline',
+                    target: '.date-line',
+                    title: 'Timeline',
+                    body: 'The days ahead across every connected calendar, with scheduling conflicts flagged as they appear.',
+                },
+                {
+                    key: 'meetings',
+                    tab: 'meetings',
+                    target: '.btn--ghost.btn--block',
+                    title: 'Meetings',
+                    body: 'Create one with a date and time. Open it to add notes in plain English — decisions and actions are extracted from them.',
+                },
+                {
+                    key: 'actions',
+                    tab: 'actions',
+                    target: '.chips',
+                    title: 'Actions',
+                    body: 'Everything you owe someone, filtered by inbox, today, upcoming, overdue or completed. Decisions convert into actions here.',
+                },
+                {
+                    key: 'inbox',
+                    tab: 'inbox',
+                    target: '.greet',
+                    title: 'Inbox',
+                    body: 'Conversations that need a reply are flagged, VIPs are marked. Replies are drafted for your approval — Okyema never sends on its own.',
+                },
+                {
+                    key: 'travel',
+                    tab: 'travel',
+                    target: '.btn--ghost.btn--block',
+                    title: 'Travel',
+                    body: 'Trips and their segments, with the documents and confirmations that belong to them alongside.',
+                },
+                {
+                    key: 'expenses',
+                    tab: 'expenses',
+                    target: '.card',
+                    title: 'Expenses',
+                    body: 'Confirm a captured receipt into an expense, then track the month and whatever is still missing a receipt.',
+                },
+                {
+                    key: 'files',
+                    tab: 'files',
+                    target: '.inline-form',
+                    title: 'Files',
+                    body: 'Search connected drives by what a document is about, rather than its filename.',
+                },
+                {
+                    key: 'people',
+                    tab: 'people',
+                    target: '.greet',
+                    title: 'People',
+                    body: 'Everyone you deal with, and the identities that tie their email, chat and calendar together.',
+                },
+                {
+                    key: 'automations',
+                    tab: 'automations',
+                    target: '.btn--ghost.btn--block',
+                    title: 'Automations',
+                    body: 'Rules that run on their own — actions due soon, a morning briefing, a weekly review. They report facts; they never act for you.',
+                },
+                {
+                    key: 'settings',
+                    tab: 'settings',
+                    target: '.inline-form',
+                    title: 'Settings',
+                    body: 'Your name and timezone drive every date and reminder, and connections live here too. Save and we move on.',
+                    waitsForSave: true,
+                },
+                {
+                    key: 'done',
+                    tab: 'today',
+                    title: 'You’re set 🎉',
+                    body: 'That is the whole app. Replay this any time from the avatar menu, and switch workspaces from the chip at the top.',
+                },
+            ],
             navItems: [
                 { key: 'today', label: 'Today', icon: '◉' },
                 { key: 'timeline', label: 'Timeline', icon: '🗓' },
@@ -558,6 +721,31 @@ Vue.createApp({
         themeIcon() { return this.theme === 'dark' ? '◐' : (this.theme === 'light' ? '◑' : '◐'); },
         themeLabel() { return this.theme; },
         unconfirmedReceipts() { return (this.receipts || []).filter(r => !r.expense_id); },
+        /** The user's own contexts, without the merged "All contexts" entry. */
+        realContexts() { return (this.contexts || []).filter(c => c.id !== null); },
+        tourStep() { return this.tourSteps[this.tour.index] || null; },
+        tourTotal() { return this.tourSteps.length; },
+        tourSpotStyle() {
+            if (!this.tour.rect) return { display: 'none' };
+            const { top, left, width, height } = this.tour.rect;
+            return { top: top + 'px', left: left + 'px', width: width + 'px', height: height + 'px' };
+        },
+        tourCardStyle() {
+            if (!this.tour.rect) return {};
+
+            const vw = window.innerWidth;
+            const width = Math.min(340, vw - 32);
+            const left = Math.min(Math.max(16, this.tour.rect.left + this.tour.rect.width / 2 - width / 2), vw - width - 16);
+            const style = { width: width + 'px', left: left + 'px' };
+
+            if (this.tour.above) {
+                style.bottom = (window.innerHeight - this.tour.rect.top + 14) + 'px';
+            } else {
+                style.top = (this.tour.rect.top + this.tour.rect.height + 14) + 'px';
+            }
+
+            return style;
+        },
     },
     methods: {
         async loadAll() {
@@ -755,28 +943,93 @@ Vue.createApp({
             const profile = await api('PATCH', '/api/profile', this.settings);
             this.me.profile = profile;
             this.settings = { display_name: profile.display_name || '', timezone: profile.timezone || '' };
+
+            // Saving the profile moves the onboarding step on by itself.
+            const key = this.tour.active && this.tourStep ? this.tourStep.key : null;
+            if (key && this.tourStep.waitsForSave) {
+                setTimeout(() => {
+                    if (this.tour.active && this.tourStep && this.tourStep.key === key) this.nextTourStep();
+                }, 900);
+            }
         },
         async loadConnectors() {
             try { this.connectors = await api('GET', '/api/connectors'); } catch (e) { /* ignore */ }
         },
         async activateContext(context) {
-            await api('POST', `/api/contexts/${context.id}/activate`);
-            this.activeContext = context;
-            this.contexts = this.contexts.map(c => ({ ...c, is_active: c.id === context.id }));
-            this.contextMenu = false;
-            this.dash = await api('GET', '/api/dashboard');
-            await this.loadAgenda();
-            this.timeline = { from: '', to: '', events: [] };
-            // Refresh whatever tab is open so no stale context data lingers.
-            if (this.tab === 'timeline') this.loadTimeline();
-            if (this.tab === 'meetings') { this.meetings = []; this.meetingDetail = null; this.loadMeetings(); }
-            if (this.tab === 'actions') this.loadActions();
-            if (this.tab === 'expenses') { this.loadReceipts(); this.loadExpenses(); }
-            if (this.tab === 'inbox') { this.conversations = []; this.inboxDetail = null; this.loadInbox(); }
-            if (this.tab === 'travel') { this.trips = []; this.loadTrips(); }
-            if (this.tab === 'people') { this.people = []; this.loadPeople(); }
-            if (this.tab === 'automations') { this.automations = []; this.loadAutomations(); }
-            if (this.tab === 'settings') this.loadConnectors();
+            try {
+                const path = context.id === null
+                    ? '/api/contexts/all/activate'
+                    : `/api/contexts/${context.id}/activate`;
+
+                await api('POST', path);
+
+                this.activeContext = context;
+                this.contexts = this.contexts.map(c => ({ ...c, is_active: c.id === context.id }));
+                this.contextMenu = false;
+                this.dash = await api('GET', '/api/dashboard');
+                await this.loadAgenda();
+                this.timeline = { from: '', to: '', events: [] };
+                // Refresh whatever tab is open so no stale context data lingers.
+                if (this.tab === 'timeline') this.loadTimeline();
+                if (this.tab === 'meetings') { this.meetings = []; this.meetingDetail = null; this.loadMeetings(); }
+                if (this.tab === 'actions') this.loadActions();
+                if (this.tab === 'expenses') { this.loadReceipts(); this.loadExpenses(); }
+                if (this.tab === 'inbox') { this.conversations = []; this.inboxDetail = null; this.loadInbox(); }
+                if (this.tab === 'travel') { this.trips = []; this.loadTrips(); }
+                if (this.tab === 'people') { this.people = []; this.loadPeople(); }
+                if (this.tab === 'automations') { this.automations = []; this.loadAutomations(); }
+                if (this.tab === 'settings') this.loadConnectors();
+            } catch (e) {
+                this.notify(e.message || 'Could not switch workspace.');
+            }
+        },
+        /** Say what went wrong, rather than appearing to do nothing. */
+        notify(message) {
+            this.notice = message;
+            clearTimeout(this.noticeTimer);
+            this.noticeTimer = setTimeout(() => { this.notice = ''; }, 8000);
+        },
+        async createContext() {
+            const name = this.newContextName.trim();
+            if (!name) return;
+
+            try {
+                await api('POST', '/api/contexts', { name });
+                this.newContextName = '';
+                await this.reloadContexts();
+            } catch (e) {
+                this.notify(e.message || 'Could not create that workspace.');
+            }
+        },
+        async renameContext(context) {
+            const name = window.prompt('Rename workspace', context.name);
+            if (!name || name === context.name) return;
+
+            try {
+                await api('PATCH', `/api/contexts/${context.id}`, { name });
+                await this.reloadContexts();
+            } catch (e) {
+                this.notify(e.message || 'Could not rename that workspace.');
+            }
+        },
+        async deleteContext(context) {
+            const confirmed = window.confirm(
+                `Delete “${context.name}”? Everything in it moves to another workspace.`,
+            );
+            if (!confirmed) return;
+
+            try {
+                await api('DELETE', `/api/contexts/${context.id}`);
+                await this.reloadContexts();
+            } catch (e) {
+                this.notify(e.message || 'Could not delete that workspace.');
+            }
+        },
+        /** Re-read the list after a change, then refresh whatever is on screen. */
+        async reloadContexts() {
+            this.contexts = await api('GET', '/api/contexts');
+            this.activeContext = this.contexts.find(c => c.is_active) || null;
+            await this.loadAll();
         },
         toggleTheme() {
             this.theme = this.theme === 'light' ? 'dark' : this.theme === 'dark' ? 'system' : 'light';
@@ -810,6 +1063,79 @@ Vue.createApp({
         isStandalone() {
             return window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone === true;
         },
+
+        // ── first-use tour ──────────────────────────────────────
+        /** Switch to the step's screen, then measure and ring its target. */
+        async showTourStep(index) {
+            this.tour.index = Math.max(0, Math.min(this.tourTotal - 1, index));
+            const step = this.tourStep;
+            this.tour.rect = null;
+
+            if (step && step.tab && this.tab !== step.tab) this.tab = step.tab;
+
+            await this.$nextTick();
+            await new Promise(resolve => requestAnimationFrame(resolve));
+
+            const el = step && step.target ? document.querySelector(step.target) : null;
+            if (!el) return;
+
+            el.scrollIntoView({ block: 'center' });
+            await new Promise(resolve => setTimeout(resolve, 220));
+
+            const box = el.getBoundingClientRect();
+            this.tour.rect = { top: box.top, left: box.left, width: box.width, height: box.height };
+            // Float the card above the spotlight when there is no room below it.
+            this.tour.above = box.bottom > window.innerHeight - 240 && box.top > 260;
+        },
+        startTour() {
+            this.tour.active = true;
+            this.tour.saving = false;
+            this.showTourStep(0);
+        },
+        nextTourStep() {
+            if (this.tour.index >= this.tourTotal - 1) { this.endTour(true); return; }
+            this.showTourStep(this.tour.index + 1);
+        },
+        prevTourStep() { this.showTourStep(this.tour.index - 1); },
+        /**
+         * Remember the tour is done, so it never opens by itself again.
+         * `false` clears the flag (the Settings "Show me the tour" button).
+         */
+        async rememberTour(dismissed) {
+            this.tour.saving = true;
+            try {
+                this.me.profile = await api('PATCH', '/api/profile', { onboarding_dismissed: dismissed });
+            } catch (e) { /* the tour is cosmetic — never block on it */ }
+            finally { this.tour.saving = false; }
+        },
+        /** Finishing the tour, or asking never to see it again, is remembered. */
+        endTour(remember = false) {
+            this.tour.active = false;
+            this.tour.rect = null;
+            if (remember) this.rememberTour(true);
+        },
+        /** Skipping only closes it for this visit. */
+        skipTour() { this.endTour(false); },
+        async replayTour() {
+            await this.rememberTour(false);
+            this.tab = 'today';
+            this.startTour();
+        },
+        onTourKey(e) {
+            if (!this.tour.active) return;
+            if (e.key === 'Escape') this.endTour(false);
+            if (e.key === 'ArrowRight') this.nextTourStep();
+            if (e.key === 'ArrowLeft') this.prevTourStep();
+        },
+
+        /**
+         * Clicking anywhere outside an open menu closes it. The toggles and
+         * the panels stop propagation, so only genuine outside clicks arrive.
+         */
+        onDocumentClick() {
+            this.userMenu = false;
+            this.contextMenu = false;
+        },
     },
     watch: {
         tab(newTab) {
@@ -830,7 +1156,20 @@ Vue.createApp({
         this.install.installed = this.isStandalone();
         this.install.prompt = window.__okyemaInstallPrompt || null;
         window.addEventListener('okyema:installable', () => { this.install.prompt = window.__okyemaInstallPrompt; });
-        this.loadAll().catch(e => { window.location.href = BASE_URL + '/login'; });
+        document.addEventListener('keydown', this.onTourKey);
+        document.addEventListener('click', this.onDocumentClick);
+        this.loadAll()
+            .then(() => {
+                // The first-use tour opens itself until it has been dismissed.
+                if (!this.me.profile || !this.me.profile.onboarding_dismissed_at) {
+                    setTimeout(() => this.startTour(), 700);
+                }
+            })
+            .catch(e => { window.location.href = BASE_URL + '/login'; });
+    },
+    beforeUnmount() {
+        document.removeEventListener('keydown', this.onTourKey);
+        document.removeEventListener('click', this.onDocumentClick);
     },
 }).mount('#app');
 </script>

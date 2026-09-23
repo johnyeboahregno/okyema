@@ -46,7 +46,7 @@ class TripController extends Controller
         ]);
 
         return response()->json([
-            'data' => $this->trips->create($request->user(), $this->workspaces->activeContext($request->user()), $validated),
+            'data' => $this->trips->create($request->user(), $this->workspaces->activeContextOrFail($request->user()), $validated),
         ], 201);
     }
 
@@ -68,7 +68,7 @@ class TripController extends Controller
 
         $trip = $this->trips->saveItinerary(
             $request->user(),
-            $this->workspaces->activeContext($request->user()),
+            $this->workspaces->activeContextOrFail($request->user()),
             $validated['title'],
             $validated['starts_on'] ?? null,
             $validated['ends_on'] ?? null,

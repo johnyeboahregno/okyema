@@ -23,11 +23,19 @@
 - **Today briefing + accessibility:** the dashboard now returns a factual
   briefing, recent decisions and travel alerts; the shell gained visible
   focus-visible styles and `aria-current` on the active nav item.
-- **Notion theme (light + dark):** both themes now match Notion — white/neutral
-  surfaces, warm gray text, Notion blue (`#2383E2`) accent and Notion status
-  colours — with flat components and no border radius or shadows. PWA chrome
-  colour follows the active theme.
-- **Tests:** 74 passing (238 assertions).
+- **Notion theme (light + dark):** both themes follow Notion — white/neutral
+  surfaces, warm gray text, Notion status colours — with flat components and no
+  border radius or shadows.
+- **Okyema Green brand:** the accent is the brand green (`#43C7A7`, with a
+  deeper `#1F7A62` for AA contrast on fills), the appbar/auth logos and
+  favicons point at the new `assets/app-icon-*` and `assets/favicon/*` files,
+  the auth screens use the brand background artwork, and the PWA colours are
+  Obsidian `#0B1020`. The reference pack moved to `docs/brand/`.
+- **Onboarding tour:** a first-use spotlight tour walks the whole app — the
+  workspace boundaries, every screen, and how to replay it. It opens by itself
+  until dismissed, remembers that on `profiles.onboarding_dismissed_at`, and
+  replays from the avatar menu under *Install on device*.
+- **Tests:** 87 passing (266 assertions).
 
 ### Known limitations
 

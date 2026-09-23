@@ -41,21 +41,18 @@ class DashboardController extends Controller
         $overdueActions = $this->actions->index($user, $context, 'overdue')->count();
         $messagesNeedingReply = $this->inbox->index($user, $context)->where('needs_reply', true)->count();
         $unprocessedReceipts = Receipt::query()
-            ->where('user_id', $user->id)
-            ->where('workspace_context_id', $context->id)
+            ->forContext($user, $context)
             ->whereNull('expense_id')
             ->count();
 
         $recentDecisions = Decision::query()
-            ->where('user_id', $user->id)
-            ->where('workspace_context_id', $context->id)
+            ->forContext($user, $context)
             ->orderByDesc('created_at')
             ->limit(3)
             ->get(['id', 'title']);
 
         $travelAlerts = Trip::query()
-            ->where('user_id', $user->id)
-            ->where('workspace_context_id', $context->id)
+            ->forContext($user, $context)
             ->whereDate('starts_on', '>=', $today->toDateString())
             ->whereDate('starts_on', '<=', $today->addDays(7)->toDateString())
             ->count();
@@ -65,9 +62,10 @@ class DashboardController extends Controller
                 'date' => CarbonImmutable::now($timezone)->toDateString(),
                 'timezone' => $timezone,
                 'context' => [
-                    'id' => $context->id,
-                    'key' => $context->type->value,
-                    'name' => $context->name,
+                    'id' => $context?->id,
+                    'key' => $context?->type,
+                    'name' => $context?->name ?? 'All contexts',
+                    'all' => $context === null,
                 ],
                 'next_meeting' => $this->calendar->nextMeeting($user, $context),
                 'meetings_today' => $meetingsToday,

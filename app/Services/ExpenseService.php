@@ -24,15 +24,14 @@ final class ExpenseService
      *     expenses: Collection<int, Expense>
      * }
      */
-    public function monthly(User $user, WorkspaceContext $context, ?string $month = null): array
+    public function monthly(User $user, ?WorkspaceContext $context, ?string $month = null): array
     {
         $month = $month ?? now()->format('Y-m');
         $start = CarbonImmutable::parse($month.'-01')->startOfMonth();
         $end = $start->endOfMonth();
 
         $expenses = Expense::query()
-            ->where('user_id', $user->id)
-            ->where('workspace_context_id', $context->id)
+            ->forContext($user, $context)
             ->whereBetween('expense_date', [$start->toDateString(), $end->toDateString()])
             ->with('receipts')
             ->orderBy('expense_date')
@@ -51,18 +50,17 @@ final class ExpenseService
      *
      * @return Collection<int, Expense>
      */
-    public function missingReceipts(User $user, WorkspaceContext $context): Collection
+    public function missingReceipts(User $user, ?WorkspaceContext $context): Collection
     {
         return Expense::query()
-            ->where('user_id', $user->id)
-            ->where('workspace_context_id', $context->id)
+            ->forContext($user, $context)
             ->whereIn('status', ['confirmed', 'submitted'])
             ->whereDoesntHave('receipts')
             ->orderBy('expense_date')
             ->get();
     }
 
-    public function exportCsv(User $user, WorkspaceContext $context, ?string $month = null): string
+    public function exportCsv(User $user, ?WorkspaceContext $context, ?string $month = null): string
     {
         $monthly = $this->monthly($user, $context, $month);
 

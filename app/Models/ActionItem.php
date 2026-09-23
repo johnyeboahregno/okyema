@@ -6,6 +6,7 @@ namespace App\Models;
 
 use App\Enums\ActionPriority;
 use App\Enums\ActionStatus;
+use App\Models\Concerns\BelongsToWorkspace;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -14,7 +15,7 @@ use Illuminate\Database\Eloquent\Relations\MorphMany;
 
 class ActionItem extends Model
 {
-    use HasFactory;
+    use BelongsToWorkspace, HasFactory;
 
     protected $fillable = [
         'user_id',

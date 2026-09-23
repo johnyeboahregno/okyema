@@ -4,9 +4,9 @@ declare(strict_types=1);
 
 namespace App\Models;
 
-use App\Enums\WorkspaceContextType;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 
@@ -15,6 +15,7 @@ class WorkspaceContext extends Model
     use HasFactory;
 
     protected $fillable = [
+        'user_id',
         'type',
         'name',
         'is_default',
@@ -23,9 +24,14 @@ class WorkspaceContext extends Model
     protected function casts(): array
     {
         return [
-            'type' => WorkspaceContextType::class,
             'is_default' => 'boolean',
         ];
+    }
+
+    /** The user who owns this context. */
+    public function owner(): BelongsTo
+    {
+        return $this->belongsTo(User::class, 'user_id');
     }
 
     public function memberships(): HasMany

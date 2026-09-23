@@ -21,12 +21,14 @@ class Profile extends Model
         'timezone',
         'locale',
         'currency',
+        'all_contexts_active',
         'onboarding_dismissed_at',
     ];
 
     protected function casts(): array
     {
         return [
+            'all_contexts_active' => 'boolean',
             'onboarding_dismissed_at' => 'datetime',
         ];
     }

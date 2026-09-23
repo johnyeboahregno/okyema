@@ -104,11 +104,10 @@ final class ReceiptService
     /**
      * @return Collection<int, Receipt>
      */
-    public function index(User $user, WorkspaceContext $context): Collection
+    public function index(User $user, ?WorkspaceContext $context): Collection
     {
         return Receipt::query()
-            ->where('user_id', $user->id)
-            ->where('workspace_context_id', $context->id)
+            ->forContext($user, $context)
             ->with(['expense', 'extractions'])
             ->orderByDesc('created_at')
             ->get();
@@ -158,7 +157,7 @@ final class ReceiptService
             ->first();
 
         $date = CarbonImmutable::parse($receipt->expense_date);
-        $folder = $this->naming->folder($context->type->value, $date);
+        $folder = $this->naming->folder($context->type, $date);
         $filename = $this->naming->filename(
             $date,
             $receipt->merchant,

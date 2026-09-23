@@ -49,7 +49,7 @@ class ReceiptController extends Controller
 
         $result = $this->receipts->capture(
             $request->user(),
-            $this->workspaces->activeContext($request->user()),
+            $this->workspaces->activeContextOrFail($request->user()),
             $request->file('receipt'),
         );
 

@@ -18,11 +18,10 @@ final class DocumentService
     /**
      * @return Collection<int, DocumentReference>
      */
-    public function index(User $user, WorkspaceContext $context, ?string $query = null): Collection
+    public function index(User $user, ?WorkspaceContext $context, ?string $query = null): Collection
     {
         return DocumentReference::query()
-            ->where('user_id', $user->id)
-            ->where('workspace_context_id', $context->id)
+            ->forContext($user, $context)
             ->when($query, fn ($q) => $q->where('title', 'like', '%'.$query.'%'))
             ->orderBy('title')
             ->get();

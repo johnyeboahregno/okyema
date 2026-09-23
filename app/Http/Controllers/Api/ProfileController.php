@@ -17,6 +17,7 @@ class ProfileController extends Controller
             'title' => ['sometimes', 'nullable', 'string', 'max:255'],
             'organisation' => ['sometimes', 'nullable', 'string', 'max:255'],
             'timezone' => ['sometimes', 'nullable', 'string', 'max:64'],
+            'onboarding_dismissed' => ['sometimes', 'boolean'],
         ]);
 
         $user = $request->user();
@@ -26,7 +27,18 @@ class ProfileController extends Controller
             ['display_name' => $user->name, 'currency' => config('okyema.currency.code')],
         );
 
-        $profile->fill($validated)->save();
+        $dismissed = $validated['onboarding_dismissed'] ?? null;
+        unset($validated['onboarding_dismissed']);
+
+        $profile->fill($validated);
+
+        // The first-use tour remembers being finished here, so "never show me
+        // this again" follows the user to every device.
+        if ($dismissed !== null) {
+            $profile->onboarding_dismissed_at = $dismissed ? now() : null;
+        }
+
+        $profile->save();
 
         return response()->json(['data' => $profile->fresh()]);
     }

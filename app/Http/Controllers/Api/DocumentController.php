@@ -38,7 +38,7 @@ class DocumentController extends Controller
         ]);
 
         return response()->json([
-            'data' => $this->documents->store($request->user(), $this->workspaces->activeContext($request->user()), $validated),
+            'data' => $this->documents->store($request->user(), $this->workspaces->activeContextOrFail($request->user()), $validated),
         ], 201);
     }
 }

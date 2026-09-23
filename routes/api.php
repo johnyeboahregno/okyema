@@ -41,6 +41,11 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::get('/dashboard', [DashboardController::class, 'index']);
 
     Route::get('/contexts', [ContextController::class, 'index']);
+    Route::post('/contexts', [ContextController::class, 'store']);
+    // Declared before the binding so "all" is never treated as an id.
+    Route::post('/contexts/all/activate', [ContextController::class, 'activateAll']);
+    Route::patch('/contexts/{context}', [ContextController::class, 'update']);
+    Route::delete('/contexts/{context}', [ContextController::class, 'destroy']);
     Route::post('/contexts/{context}/activate', [ContextController::class, 'activate']);
 
     Route::get('/agenda', [AgendaController::class, 'agenda']);

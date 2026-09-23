@@ -23,7 +23,7 @@ final class CalendarService
     /**
      * @return list<array<string, mixed>>
      */
-    public function agenda(User $user, WorkspaceContext $context, CarbonImmutable $day, ?string $timezone = null): array
+    public function agenda(User $user, ?WorkspaceContext $context, CarbonImmutable $day, ?string $timezone = null): array
     {
         $tz = $timezone ?: $this->timezone($user);
 
@@ -36,7 +36,7 @@ final class CalendarService
     /**
      * @return list<array<string, mixed>>
      */
-    public function timeline(User $user, WorkspaceContext $context, CarbonImmutable $from, CarbonImmutable $to): array
+    public function timeline(User $user, ?WorkspaceContext $context, CarbonImmutable $from, CarbonImmutable $to): array
     {
         return $this->between($user, $context, $from->utc(), $to->utc(), $this->timezone($user));
     }
@@ -44,14 +44,13 @@ final class CalendarService
     /**
      * @return array<string, mixed>|null
      */
-    public function nextMeeting(User $user, WorkspaceContext $context, ?CarbonImmutable $now = null): ?array
+    public function nextMeeting(User $user, ?WorkspaceContext $context, ?CarbonImmutable $now = null): ?array
     {
         $now = $now ?? CarbonImmutable::now();
         $tz = $this->timezone($user);
 
         $event = Event::query()
-            ->where('user_id', $user->id)
-            ->where('workspace_context_id', $context->id)
+            ->forContext($user, $context)
             ->where('state', 'confirmed')
             ->where('is_all_day', false)
             ->where('ends_at', '>', $now)
@@ -67,14 +66,13 @@ final class CalendarService
      */
     private function between(
         User $user,
-        WorkspaceContext $context,
+        ?WorkspaceContext $context,
         CarbonImmutable $start,
         CarbonImmutable $end,
         string $tz,
     ): array {
         $events = Event::query()
-            ->where('user_id', $user->id)
-            ->where('workspace_context_id', $context->id)
+            ->forContext($user, $context)
             ->where(function ($query) use ($start, $end) {
                 $query->where(function ($q) use ($start, $end) {
                     $q->where('starts_at', '>=', $start)->where('starts_at', '<', $end);

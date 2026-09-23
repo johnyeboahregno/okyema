@@ -21,11 +21,10 @@ final class MeetingService
     /**
      * @return Collection<int, Meeting>
      */
-    public function index(User $user, WorkspaceContext $context): Collection
+    public function index(User $user, ?WorkspaceContext $context): Collection
     {
         return Meeting::query()
-            ->where('user_id', $user->id)
-            ->where('workspace_context_id', $context->id)
+            ->forContext($user, $context)
             ->with(['participants'])
             ->withCount(['decisions', 'actionItems'])
             ->orderByDesc('starts_at')

@@ -33,6 +33,24 @@ trait AuthorizesWorkspace
         return $context;
     }
 
+    /**
+     * The context, if this user owns it. Creating, renaming and removing are
+     * reserved for the owner, so a delegated membership cannot reshape a
+     * workspace it only has access to.
+     */
+    protected function ownedContext(User $user, WorkspaceContext $context): WorkspaceContext
+    {
+        $context = $this->memberContext($user, $context);
+
+        abort_unless(
+            $this->workspaceService()->isOwner($context, $user),
+            404,
+            'That workspace does not exist.',
+        );
+
+        return $context;
+    }
+
     /** Resolve an owned context by id (404 for non-members). */
     protected function resolveContext(User $user, int $contextId): WorkspaceContext
     {

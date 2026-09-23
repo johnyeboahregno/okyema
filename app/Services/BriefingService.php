@@ -25,7 +25,7 @@ final class BriefingService
     /**
      * @return array<string, mixed>
      */
-    public function morning(User $user, WorkspaceContext $context, ?string $timezone = null): array
+    public function morning(User $user, ?WorkspaceContext $context, ?string $timezone = null): array
     {
         $timezone = $timezone ?: $user->profile?->timezone ?: 'UTC';
         $today = CarbonImmutable::now($timezone)->startOfDay();
@@ -33,8 +33,7 @@ final class BriefingService
         $overdue = $this->actions->index($user, $context, 'overdue');
         $needingReply = $this->inbox->index($user, $context)->where('needs_reply', true)->count();
         $unprocessedReceipts = Receipt::query()
-            ->where('user_id', $user->id)
-            ->where('workspace_context_id', $context->id)
+            ->forContext($user, $context)
             ->whereNull('expense_id')
             ->count();
 
@@ -42,7 +41,7 @@ final class BriefingService
 
         return [
             'date' => CarbonImmutable::now($timezone)->toDateString(),
-            'context' => $context->type->value,
+            'context' => $context?->type,
             'next_meeting' => $this->calendar->nextMeeting($user, $context),
             'meetings_today' => $meetingsToday,
             'overdue_actions' => $overdue->map(fn ($action) => $action->title)->values(),
@@ -65,7 +64,7 @@ final class BriefingService
     /**
      * @return array<string, mixed>
      */
-    public function weekly(User $user, WorkspaceContext $context): array
+    public function weekly(User $user, ?WorkspaceContext $context): array
     {
         $today = CarbonImmutable::now()->startOfDay();
         $weekEnd = $today->addDays(6)->endOfDay();

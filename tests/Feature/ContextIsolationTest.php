@@ -13,7 +13,9 @@ test('a user can list their contexts with the active one flagged', function () {
     $response = $this->actingAs($user)->getJson('/api/contexts');
 
     $response->assertOk();
-    expect($response->json('data'))->toHaveCount(3);
+    // The merged "All contexts" choice, plus the user's three contexts.
+    expect($response->json('data'))->toHaveCount(4);
+    expect(collect($response->json('data'))->firstWhere('key', 'ALL'))->not->toBeNull();
     expect(collect($response->json('data'))->where('is_active', true))->toHaveCount(1);
 });
 
@@ -25,8 +27,10 @@ test('activating a context moves the active flag', function () {
         ->assertOk()
         ->assertJsonPath('data.key', 'LAUNCHPAD');
 
-    $this->actingAs($user)->getJson('/api/contexts')
-        ->assertJsonPath('data.1.is_active', true);
+    $contexts = collect($this->actingAs($user)->getJson('/api/contexts')->json('data'));
+
+    expect($contexts->firstWhere('key', 'LAUNCHPAD')['is_active'])->toBeTrue();
+    expect($contexts->firstWhere('key', 'REGNO')['is_active'])->toBeFalse();
 });
 
 test('a non-member gets a 404 when activating another owner context', function () {

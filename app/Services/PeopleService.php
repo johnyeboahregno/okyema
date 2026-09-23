@@ -19,11 +19,10 @@ final class PeopleService
     /**
      * @return Collection<int, Person>
      */
-    public function index(User $user, WorkspaceContext $context): Collection
+    public function index(User $user, ?WorkspaceContext $context): Collection
     {
         return Person::query()
-            ->where('user_id', $user->id)
-            ->where('workspace_context_id', $context->id)
+            ->forContext($user, $context)
             ->with('providerIdentities')
             ->orderBy('name')
             ->get();

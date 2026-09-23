@@ -27,8 +27,7 @@ class AutomationController extends Controller
 
         return response()->json([
             'data' => AutomationRule::query()
-                ->where('user_id', $request->user()->id)
-                ->where('workspace_context_id', $context->id)
+                ->forContext($request->user(), $context)
                 ->withCount('runs')
                 ->get(),
         ]);
@@ -46,7 +45,7 @@ class AutomationController extends Controller
 
         $rule = AutomationRule::create([
             'user_id' => $request->user()->id,
-            'workspace_context_id' => $this->workspaces->activeContext($request->user())->id,
+            'workspace_context_id' => $this->workspaces->activeContextOrFail($request->user())->id,
             'name' => $validated['name'],
             'trigger' => $validated['trigger'],
             'conditions' => $validated['conditions'] ?? null,

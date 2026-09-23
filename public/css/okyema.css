@@ -149,6 +149,20 @@ button { font-family: inherit; }
 .user-menu__item--muted { color: var(--text-muted); }
 .user-menu__version { padding: 10px 12px; color: var(--text-muted); font-size: .78rem; margin: 0; }
 
+/* "New workspace" row inside the context menu */
+.user-menu__form {
+    display: flex; gap: 6px;
+    margin-top: 6px; padding: 8px 0 4px;
+    border-top: 1px solid var(--stroke);
+}
+.user-menu__form input {
+    flex: 1; min-width: 0;
+    padding: 8px 10px;
+    border: 1px solid var(--stroke); background: var(--surface); color: var(--text);
+    font: inherit; font-size: .85rem;
+}
+.user-menu__form .btn { padding: 8px 12px; font-size: .85rem; }
+
 .screen { max-width: 1200px; margin: 0 auto; padding: 16px; padding-bottom: calc(var(--nav-height) + env(safe-area-inset-bottom, 0px) + 24px); }
 
 /* ── Cards ─────────────────────────────────────────────── */
@@ -353,8 +367,83 @@ a.list__item { text-decoration: none; }
 .field textarea { resize: vertical; }
 .field input:focus, .field textarea:focus, .field select:focus { outline: 2px solid var(--accent); outline-offset: 1px; }
 
+/* ── First-use tour ──────────────────────────────────────
+   A spotlight over the live UI: one element with a 9999px box-shadow makes
+   the shade, and the card floats next to the highlighted element. */
+.tour { position: fixed; inset: 0; z-index: 90; }
+
+.tour__shade { position: absolute; inset: 0; background: rgba(11, 16, 32, .62); backdrop-filter: blur(2px); }
+
+.tour__spot {
+    position: fixed;
+    border-radius: var(--radius);
+    box-shadow: 0 0 0 9999px rgba(11, 16, 32, .62), 0 0 0 2px rgba(255, 255, 255, .8) inset;
+    pointer-events: none;
+    transition: top .28s cubic-bezier(.4, 0, .2, 1), left .28s cubic-bezier(.4, 0, .2, 1), width .28s ease, height .28s ease;
+}
+.tour__spot::after {
+    content: '';
+    position: absolute;
+    inset: -6px;
+    border: 2px solid var(--accent);
+    animation: tourPulse 1.9s ease-in-out infinite;
+}
+
+.tour__card {
+    position: fixed;
+    background: var(--surface);
+    border: 1px solid var(--stroke);
+    box-shadow: 0 18px 44px rgba(11, 16, 32, .34);
+    padding: 16px 16px 12px;
+}
+.tour__card--center {
+    top: 50%; left: 50%;
+    transform: translate(-50%, -50%);
+    width: min(340px, calc(100vw - 32px));
+}
+
+.tour__head { display: flex; align-items: center; justify-content: space-between; }
+.tour__badge {
+    background: var(--accent-soft); color: var(--accent-strong);
+    font-size: .7rem; font-weight: 700; letter-spacing: .04em; padding: 3px 9px;
+}
+.tour__close { background: none; border: 0; font-size: 1.4rem; line-height: 1; color: var(--text-muted); cursor: pointer; padding: 0 2px; }
+.tour__close:hover { color: var(--text); }
+
+.tour__title { margin: 10px 0 4px; font-size: 1.05rem; letter-spacing: -.01em; }
+.tour__body { margin: 0; font-size: .88rem; color: var(--text-muted); line-height: 1.45; }
+
+.tour__dots { display: flex; flex-wrap: wrap; gap: 5px; margin: 12px 0 0; }
+.tour__dot { width: 6px; height: 6px; background: var(--stroke); transition: background .2s ease, width .2s ease; }
+.tour__dot--done { background: var(--accent-soft); }
+.tour__dot--on { width: 18px; background: var(--accent); }
+
+.tour__actions { display: flex; gap: 8px; margin-top: 14px; }
+.tour__actions .btn { flex: 1; }
+.tour__next { flex: 2 !important; }
+
+.tour__foot { display: flex; align-items: center; justify-content: space-between; gap: 10px; margin-top: 10px; }
+.tour__link { background: none; border: 0; padding: 0; font: inherit; font-size: .76rem; font-weight: 600; color: var(--accent-strong); cursor: pointer; text-decoration: underline; }
+.tour__link--dim { color: var(--text-muted); font-weight: 500; text-decoration: none; }
+.tour__link:disabled { opacity: .5; cursor: default; }
+
+@keyframes tourPulse {
+    0%, 100% { opacity: .55; transform: scale(1); }
+    50% { opacity: 1; transform: scale(1.015); }
+}
+
 /* ── Misc ─────────────────────────────────────────────── */
 .hidden { display: none; }
+
+/* Inline status line: nothing that fails should fail silently */
+.app-notice {
+    position: fixed; z-index: 60; top: 68px; left: 50%; transform: translateX(-50%);
+    max-width: min(560px, calc(100vw - 32px));
+    background: var(--surface); color: var(--text);
+    border: 1px solid var(--danger); border-radius: var(--radius-sm);
+    padding: 10px 14px; font-size: .86rem; cursor: pointer;
+    box-shadow: 0 10px 30px rgba(11, 16, 32, .28);
+}
 
 :focus-visible {
     outline: 2px solid var(--accent);

@@ -66,7 +66,7 @@ class ActionController extends Controller
 
         $action = $this->actions->create(
             $request->user(),
-            $this->workspaces->activeContext($request->user()),
+            $this->workspaces->activeContextOrFail($request->user()),
             $validated,
         );
 

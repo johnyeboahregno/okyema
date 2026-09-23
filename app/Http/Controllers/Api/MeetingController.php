@@ -56,7 +56,7 @@ class MeetingController extends Controller
 
         $meeting = $this->meetings->create(
             $request->user(),
-            $this->workspaces->activeContext($request->user()),
+            $this->workspaces->activeContextOrFail($request->user()),
             $validated,
         );
 

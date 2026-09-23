@@ -59,14 +59,13 @@ approval step.
 
 ## Visual identity
 
-Palette (from the approved asset pack):
+Palette (Okyema green identity):
 
 | Swatch | Name | Hex |
 |--------|------|-----|
+| ■ | Okyema Green | `#43C7A7` |
 | ■ | Obsidian | `#0B1020` |
-| ■ | Deep Indigo | `#151D3B` |
-| ■ | Intelligence Violet | `#7457FF` |
-| ■ | Luminous Cyan | `#36D7EB` |
+| ■ | Indigo | `#151D3B` |
 | ■ | Cloud | `#F5F7FB` |
 | ■ | White | `#FFFFFF` |
 

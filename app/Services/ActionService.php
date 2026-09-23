@@ -26,11 +26,10 @@ final class ActionService
     /**
      * @return Collection<int, ActionItem>
      */
-    public function index(User $user, WorkspaceContext $context, string $view): Collection
+    public function index(User $user, ?WorkspaceContext $context, string $view): Collection
     {
         $query = ActionItem::query()
-            ->where('user_id', $user->id)
-            ->where('workspace_context_id', $context->id)
+            ->forContext($user, $context)
             ->with(['meeting', 'citations']);
 
         $today = CarbonImmutable::now($this->timezone($user))->toDateString();

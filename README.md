@@ -66,16 +66,17 @@ See `.env.example`. Key values:
 
 ## Brand assets
 
-Okyema uses the supplied Okyema asset pack (the approved O/K monogram, app
-icon, splash and PWA icons). Those files are **not** committed to this
-repository and must be placed in `public/assets/` before release:
+Okyema uses the Okyema green identity — see `public/assets/README.md` for the
+rules. The committed assets live in `public/assets/`:
 
-- `icon-192.png`, `icon-512.png`, `icon-maskable-512.png`
-- `apple-touch-icon.png`, `favicon.png`
-- the approved O/K monogram used by `app.php`, `login.php`, `register.php`
+- `app-icon-{light,dark}.svg` + `app-icons/okyema-{light,dark}-*.png` — app tiles
+- `logos/okyema-logo-{light,dark}.svg` — primary lockups
+- `favicon/` — `.ico` plus 16/32/48 PNGs
+- `backgrounds/` — brand artwork for the auth screens
+- `source/logoGreen-original.png` — the canonical symbol, never redrawn
 
-The in-code monogram is a temporary placeholder only — the approved mark is
-never redrawn or reinterpreted.
+Reference packs (raw supplier output) are kept out of the web root under
+`docs/brand/`.
 
 ## Tests
 
@@ -101,4 +102,5 @@ needed. Browser end-to-end tests (Playwright) run on demand with
 - [Deployment](docs/deployment/DEPLOYMENT.md)
 - [Release checklist](docs/deployment/RELEASE_CHECKLIST.md)
 - [Connectors overview](docs/connectors/README.md) · [Google](docs/connectors/google.md) · [Microsoft](docs/connectors/microsoft.md) · [Slack](docs/connectors/slack.md)
+- [Onboarding tour](docs/ONBOARDING_TOUR.md)
 - [Progress log](docs/PROGRESS.md)

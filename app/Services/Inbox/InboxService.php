@@ -23,11 +23,10 @@ final class InboxService
     /**
      * @return Collection<int, Conversation>
      */
-    public function index(User $user, WorkspaceContext $context, ?int $personId = null): Collection
+    public function index(User $user, ?WorkspaceContext $context, ?int $personId = null): Collection
     {
         return Conversation::query()
-            ->where('user_id', $user->id)
-            ->where('workspace_context_id', $context->id)
+            ->forContext($user, $context)
             ->when($personId, fn ($query) => $query->where('person_id', $personId))
             ->with(['person', 'messages' => fn ($query) => $query->orderByDesc('received_at')])
             ->orderByDesc('last_message_at')

@@ -26,7 +26,7 @@ test('a new user can register and gets a profile and the three workspace context
     expect($user->memberships)->toHaveCount(3);
     expect($user->workspaceContexts()->count())->toBe(3);
 
-    $keys = $user->workspaceContexts()->get()->pluck('type')->map->value->all();
+    $keys = $user->workspaceContexts()->get()->pluck('type')->all();
     expect($keys)->toContain('REGNO', 'LAUNCHPAD', 'PERSONAL');
 });
 
