@@ -3,6 +3,8 @@
 declare(strict_types=1);
 
 use App\Http\Controllers\Auth\AuthController;
+use App\Http\Controllers\Auth\ConnectorOAuthController;
+use App\Support\UiMode;
 use Illuminate\Support\Facades\Route;
 
 /*
@@ -21,6 +23,14 @@ Route::post('/logout', [AuthController::class, 'logout'])->name('logout');
 Route::get('/auth/google/redirect', [AuthController::class, 'redirectToGoogle']);
 Route::get('/auth/google/callback', [AuthController::class, 'handleGoogleCallback']);
 
+// Calendar connector OAuth (add/connect a calendar). Sign-in is a separate client.
+Route::middleware('auth')->group(function () {
+    Route::get('/connectors/{provider}/redirect', [ConnectorOAuthController::class, 'redirect'])
+        ->whereIn('provider', ['google', 'microsoft', 'notion']);
+    Route::get('/connectors/{provider}/callback', [ConnectorOAuthController::class, 'callback'])
+        ->whereIn('provider', ['google', 'microsoft', 'notion']);
+});
+
 // The app shell. Guests go straight to login; signed-in users get the SPA.
 Route::get('/', function () {
     if (! auth()->check()) {
@@ -28,8 +38,10 @@ Route::get('/', function () {
     }
 
     $base = rtrim(request()->getBasePath(), '/');
-    $__path = resource_path('views/app.php');
-    extract(['base' => $base]);
+    $connectorNotice = session()->pull('connector_notice');
+    $view = UiMode::isSimple() ? 'simple.php' : 'app.php';
+    $__path = resource_path('views/'.$view);
+    extract(['base' => $base, 'connectorNotice' => $connectorNotice]);
     ob_start();
     include $__path;
 

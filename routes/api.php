@@ -5,6 +5,7 @@ declare(strict_types=1);
 use App\Http\Controllers\Api\ActionController;
 use App\Http\Controllers\Api\AgendaController;
 use App\Http\Controllers\Api\ApprovalController;
+use App\Http\Controllers\Api\AssistantController;
 use App\Http\Controllers\Api\AuthController;
 use App\Http\Controllers\Api\AutomationController;
 use App\Http\Controllers\Api\BriefingController;
@@ -38,6 +39,8 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::get('/me', [AuthController::class, 'me']);
     Route::patch('/profile', [ProfileController::class, 'update']);
 
+    Route::post('/assistant', [AssistantController::class, 'ask']);
+
     Route::get('/dashboard', [DashboardController::class, 'index']);
 
     Route::get('/contexts', [ContextController::class, 'index']);
@@ -52,6 +55,7 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::get('/timeline', [AgendaController::class, 'timeline']);
 
     Route::get('/connectors', [ConnectorController::class, 'index']);
+    Route::delete('/connectors/{account}', [ConnectorController::class, 'destroy']);
 
     Route::get('/meetings', [MeetingController::class, 'index']);
     Route::post('/meetings', [MeetingController::class, 'store']);

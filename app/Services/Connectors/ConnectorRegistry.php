@@ -19,4 +19,18 @@ final class ConnectorRegistry
             ConnectorProvider::Microsoft => app(MicrosoftCalendarConnector::class),
         };
     }
+
+    /**
+     * Canonical capabilities for a provider, without leaking provider
+     * internals. Notion is a knowledge connector, not a calendar.
+     *
+     * @return list<string>
+     */
+    public function capabilities(ConnectorProvider $provider): array
+    {
+        return match ($provider) {
+            ConnectorProvider::Google, ConnectorProvider::Microsoft => $this->calendar($provider)->capabilities(),
+            ConnectorProvider::Notion => ['notion'],
+        };
+    }
 }

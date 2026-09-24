@@ -35,7 +35,12 @@
   workspace boundaries, every screen, and how to replay it. It opens by itself
   until dismissed, remembers that on `profiles.onboarding_dismissed_at`, and
   replays from the avatar menu under *Install on device*.
-- **Tests:** 87 passing (266 assertions).
+- **Periodic calendar sync:** a scheduled `calendar:sync` command pulls every
+  connected Google/Microsoft calendar every 15 minutes (idempotent via
+  provider cursors) and mirrors timed, non-cancelled entries into the Meetings
+  workspace, linked one-to-one by `event_id`. Cancelled or all-day entries are
+  excluded, and the Meetings list marks synced entries as "from calendar".
+- **Tests:** 107 passing (352 assertions).
 
 ### Known limitations
 

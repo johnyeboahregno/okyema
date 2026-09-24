@@ -185,7 +185,7 @@
                 <button class="list__item" v-for="m in meetings" :key="m.id" @click="openMeeting(m)">
                     <span class="list__main">
                         <span class="list__title">{{ m.title }}</span>
-                        <span class="list__sub">{{ m.starts_at ? m.starts_at.slice(0, 10) : 'No date' }} · {{ m.participants_count }} people · {{ m.decisions_count }} decisions · {{ m.actions_count }} actions</span>
+                        <span class="list__sub">{{ m.starts_at ? m.starts_at.slice(0, 10) : 'No date' }}<template v-if="m.event_id"> · from calendar</template> · {{ m.participants_count }} people · {{ m.decisions_count }} decisions · {{ m.actions_count }} actions</span>
                     </span>
                     <span class="list__chev">›</span>
                 </button>
@@ -456,10 +456,20 @@
                         <span class="list__title">{{ c.provider }}</span>
                         <span class="list__sub">{{ c.status }} · {{ (c.capabilities || []).join(', ') }} · synced {{ c.last_synced_at || 'never' }}</span>
                     </span>
-                    <span class="badge" :class="c.status === 'connected' ? 'badge--ok' : 'badge--warn'">{{ c.status }}</span>
+                    <button v-if="c.status === 'connected'" class="btn btn--ghost" @click="disconnectConnector(c)">Disconnect</button>
+                    <span v-else class="badge badge--warn">{{ c.status }}</span>
                 </div>
             </div>
             <p class="muted small" v-else>No connectors connected yet.</p>
+
+            <div class="card card__row" v-if="!hasConnector('google')">
+                <span>Google Calendar</span>
+                <button class="btn btn--primary" @click="connectConnector('google')">Connect</button>
+            </div>
+            <div class="card card__row" v-if="!hasConnector('microsoft')">
+                <span>Outlook Calendar</span>
+                <button class="btn btn--primary" @click="connectConnector('microsoft')">Connect</button>
+            </div>
 
             <p class="muted small" style="margin-top:16px">Okyema v<?= e(config('okyema.app.version')) ?> · Powered by <img class="regnoai-logo regnoai-logo--light" src="<?= e($base) ?>/assets/regnoai.png" alt="Regno AI"><img class="regnoai-logo regnoai-logo--dark" src="<?= e($base) ?>/assets/regnoai-white.png" alt="Regno AI"></p>
         </section>
@@ -558,7 +568,7 @@ Vue.createApp({
             navOpen: false,
             contextMenu: false,
             userMenu: false,
-            notice: '',
+            notice: <?= json_encode($connectorNotice ?? '') ?>,
             newContextName: '',
             gravatarUrl: '',
             theme: 'system',
@@ -991,6 +1001,21 @@ Vue.createApp({
         async loadConnectors() {
             try { this.connectors = await api('GET', '/api/connectors'); } catch (e) { /* ignore */ }
         },
+        hasConnector(provider) {
+            return (this.connectors || []).some(c => c.provider === provider && c.status === 'connected');
+        },
+        connectConnector(provider) {
+            window.location.href = BASE_URL + '/connectors/' + provider + '/redirect';
+        },
+        async disconnectConnector(c) {
+            try {
+                await api('DELETE', `/api/connectors/${c.id}`);
+                this.notify('Disconnected. Reconnect any time from Settings.');
+                await this.loadConnectors();
+            } catch (e) {
+                this.notify(e.message || 'Could not disconnect.');
+            }
+        },
         async activateContext(context) {
             try {
                 const path = context.id === null
@@ -1202,6 +1227,13 @@ Vue.createApp({
         document.addEventListener('click', this.onDocumentClick);
         this.loadAll()
             .then(() => {
+                // Land on the tab named in ?tab=… (the connector OAuth flow
+                // returns to Settings this way).
+                const initialTab = new URLSearchParams(window.location.search).get('tab');
+                if (initialTab && this.navItems.some(i => i.key === initialTab)) {
+                    this.tab = initialTab;
+                }
+
                 // The first-use tour opens itself until it has been dismissed.
                 if (!this.me.profile || !this.me.profile.onboarding_dismissed_at) {
                     setTimeout(() => this.startTour(), 700);

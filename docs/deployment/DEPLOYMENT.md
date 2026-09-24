@@ -18,6 +18,34 @@ Copy `.env.example` to `.env` and set, at minimum:
 See `GOOGLE_SIGNIN.md`-style notes in `.env.example`, and the full sign-in
 runbook in [`GOOGLE_SIGNIN.md`](GOOGLE_SIGNIN.md).
 
+## Interface mode
+
+`OKYEMA_UI_MODE` selects which shell the dashboard renders for the whole
+deployment:
+
+- `classic` — the full workspace SPA (default).
+- `simple` — the focused assistant screen.
+
+The value is read at runtime by the PHP shell (there is no build step). Set
+it in `.env` before deploy; an invalid or missing value falls back to
+`classic` and is logged.
+
+```bash
+OKYEMA_UI_MODE=classic   # the full workspace SPA
+OKYEMA_UI_MODE=simple    # the focused assistant screen
+```
+
+Notion is optional and configured in `.env`:
+
+- `NOTION_CLIENT_ID` / `NOTION_CLIENT_SECRET` / `NOTION_REDIRECT_URI` — the
+  public integration OAuth credentials (Settings → Connections → Notion).
+  Register the redirect URI
+  `https://john.okyema.work/connectors/notion/callback` verbatim in the
+  Notion integration.
+- `NOTION_DATABASE_REGNO` / `NOTION_DATABASE_LAUNCHPAD` /
+  `NOTION_DATABASE_PERSONAL` — one database id per workspace context, used for
+  the assistant's Notion search and approval-gated page writes.
+
 ## Build & release
 
 ```bash

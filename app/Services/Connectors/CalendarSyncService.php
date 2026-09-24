@@ -7,6 +7,7 @@ namespace App\Services\Connectors;
 use App\Models\Calendar;
 use App\Models\ConnectorAccount;
 use App\Models\Event;
+use App\Models\Meeting;
 use App\Models\SyncCursor;
 use App\Models\SyncRun;
 use App\Models\WorkspaceContext;
@@ -80,6 +81,26 @@ final class CalendarSyncService
         }
     }
 
+    /**
+     * Resolve the workspace a connector account syncs into: the context of its
+     * first calendar, or the user's default workspace for a freshly connected
+     * account that has no calendars yet.
+     */
+    public function contextFor(ConnectorAccount $account): ?WorkspaceContext
+    {
+        $calendar = $account->calendars()->with('workspaceContext')->first();
+
+        if ($calendar !== null && $calendar->workspaceContext !== null) {
+            return $calendar->workspaceContext;
+        }
+
+        return WorkspaceContext::query()
+            ->where('user_id', $account->user_id)
+            ->where('is_default', true)
+            ->orderBy('id')
+            ->first();
+    }
+
     private function primaryCalendar(ConnectorAccount $account, WorkspaceContext $context): Calendar
     {
         return Calendar::firstOrCreate(
@@ -107,7 +128,7 @@ final class CalendarSyncService
         Calendar $calendar,
         array $item,
     ): void {
-        Event::updateOrCreate(
+        $event = Event::updateOrCreate(
             [
                 'provider' => $item['provider'] ?? $account->provider->value,
                 'provider_event_id' => $item['provider_event_id'] ?? null,
@@ -128,6 +149,44 @@ final class CalendarSyncService
                 'external_url' => $item['external_url'] ?? null,
                 'recurrence_rule' => $item['recurrence_rule'] ?? null,
                 'recurrence_id' => $item['recurrence_id'] ?? null,
+            ],
+        );
+
+        $this->mirrorMeeting($account, $context, $event, $item);
+    }
+
+    /**
+     * Keep the meetings workspace in step with the calendar: timed,
+     * non-cancelled events become meetings linked by event_id, so calendar
+     * entries show up in the Meetings section. An event that becomes
+     * cancelled, or turns into an all-day entry, loses its mirror.
+     *
+     * @param  array<string, mixed>  $item
+     */
+    private function mirrorMeeting(
+        ConnectorAccount $account,
+        WorkspaceContext $context,
+        Event $event,
+        array $item,
+    ): void {
+        $cancelled = ($item['state'] ?? 'confirmed') === 'cancelled';
+        $allDay = (bool) ($item['is_all_day'] ?? false);
+
+        if ($cancelled || $allDay) {
+            Meeting::where('event_id', $event->id)->delete();
+
+            return;
+        }
+
+        Meeting::updateOrCreate(
+            ['event_id' => $event->id],
+            [
+                'user_id' => $account->user_id,
+                'workspace_context_id' => $context->id,
+                'title' => $item['title'],
+                'location' => $item['location'] ?? null,
+                'starts_at' => $item['starts_at'],
+                'ends_at' => $item['ends_at'],
             ],
         );
     }

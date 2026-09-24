@@ -24,6 +24,19 @@ return [
 
     /*
     |--------------------------------------------------------------------------
+    | Interface mode
+    |--------------------------------------------------------------------------
+    | OKYEMA_UI_MODE selects which shell the dashboard route renders for the
+    | whole deployment: 'classic' (the full workspace SPA) or 'simple' (the
+    | focused assistant screen). Read at runtime — see App\Support\UiMode.
+    | Invalid values fall back to 'classic' and are reported in the log.
+    */
+    'ui' => [
+        'mode' => env('OKYEMA_UI_MODE', 'classic'),
+    ],
+
+    /*
+    |--------------------------------------------------------------------------
     | Workspace contexts
     |--------------------------------------------------------------------------
     | Every stored object carries a workspace identifier unless it is
@@ -93,5 +106,22 @@ return [
 
         // Laravel's max: validation for the uploaded photo, in kilobytes.
         'max_kb' => env('RECEIPT_SCAN_MAX_KB', 8192),
+    ],
+
+    /*
+    |--------------------------------------------------------------------------
+    | Notion
+    |--------------------------------------------------------------------------
+    | Read/write integration for the assistant. Each default workspace context
+    | maps to one Notion database id so Notion results stay inside the active
+    | context boundary (ADR-001). The API version header is pinned here.
+    */
+    'notion' => [
+        'version' => env('NOTION_VERSION', '2022-06-28'),
+        'databases' => [
+            'REGNO' => env('NOTION_DATABASE_REGNO'),
+            'LAUNCHPAD' => env('NOTION_DATABASE_LAUNCHPAD'),
+            'PERSONAL' => env('NOTION_DATABASE_PERSONAL'),
+        ],
     ],
 ];

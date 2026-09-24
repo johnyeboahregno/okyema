@@ -35,6 +35,7 @@ class MeetingController extends Controller
                 'title' => $meeting->title,
                 'location' => $meeting->location,
                 'starts_at' => $meeting->starts_at?->toIso8601String(),
+                'event_id' => $meeting->event_id,
                 'participants_count' => $meeting->participants->count(),
                 'decisions_count' => $meeting->decisions_count,
                 'actions_count' => $meeting->action_items_count,
