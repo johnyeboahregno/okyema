@@ -8,6 +8,7 @@ use App\Models\ApprovalRequest;
 use App\Models\ConnectorAccount;
 use App\Models\WorkspaceContext;
 use App\Services\AI\AIProviderInterface;
+use App\Services\Assistant\AssistantService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Http;
 
@@ -168,4 +169,15 @@ test('approving a Notion change executes the write and rejecting cancels it', fu
     $this->actingAs($user)->postJson("/api/approvals/{$update->id}/reject")
         ->assertOk()
         ->assertJsonPath('data.status', 'rejected');
+});
+
+test('the system prompt instructs the model to emit a notion_change for creates', function () {
+    $method = new ReflectionMethod(AssistantService::class, 'systemPrompt');
+
+    $prompt = $method->invoke(app(AssistantService::class));
+
+    expect($prompt)
+        ->toContain('notion_change')
+        ->toContain('"create"')
+        ->toContain('never refuse for lack of context');
 });
