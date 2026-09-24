@@ -47,6 +47,7 @@ $aiInfo = [
     </header>
 
     <main class="simple-main">
+        <p class="simple-notice" v-if="notice" role="status" @click="notice = ''">{{ notice }}</p>
         <section class="simple-main__results" aria-live="polite">
             <p class="empty-hint" v-if="!results.length && !loading">Ask a question, find a detail or get something moving.</p>
 
@@ -98,12 +99,12 @@ $aiInfo = [
                     <button class="btn btn--primary" type="button" :disabled="loading || !query.trim()" @click="send()">Send ↑</button>
                 </div>
 
-                <div class="mic">
-                    <button class="mic__button" type="button" :class="{'is-recording': recording}"
-                            :aria-label="recording ? 'Stop recording' : 'Start voice input'"
-                            @click="startVoice">🎤</button>
-                    <span>{{ recording ? 'Listening… tap to stop' : 'or use your voice' }}</span>
-                </div>
+                <button class="mic-btn" type="button" :class="{'is-recording': recording}"
+                        :aria-label="recording ? 'Stop recording' : 'Start voice input'"
+                        @click="startVoice">
+                    <span aria-hidden="true">🎤</span>
+                    <span>{{ recording ? 'Listening… tap to stop' : 'Voice' }}</span>
+                </button>
 
                 <div class="error-bar" v-if="voiceError">{{ voiceError }}</div>
 
@@ -209,6 +210,7 @@ Vue.createApp({
             settings: { display_name: '', timezone: '' },
             connectors: [],
             ai: <?= json_encode($aiInfo) ?>,
+            notice: <?= json_encode($connectorNotice ?? '') ?>,
         };
     },
     computed: {
@@ -219,7 +221,15 @@ Vue.createApp({
         this.theme = localStorage.getItem('okyema.theme') || 'system';
         this.applyTheme();
         document.addEventListener('click', this.onDocumentClick);
-        this.loadAll().catch(() => { window.location.href = BASE_URL + '/login'; });
+        this.loadAll()
+            .then(() => {
+                // Connector OAuth returns here with ?tab=settings — open the
+                // settings modal so the result notice and connections show.
+                if (new URLSearchParams(window.location.search).get('tab') === 'settings') {
+                    this.openSettings();
+                }
+            })
+            .catch(() => { window.location.href = BASE_URL + '/login'; });
     },
     beforeUnmount() {
         document.removeEventListener('click', this.onDocumentClick);

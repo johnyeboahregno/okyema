@@ -33,14 +33,14 @@ final class ReceiptScanner
         if (! config('okyema.receipts.enabled')) {
             $missing[] = 'RECEIPT_SCAN_ENABLED is off';
         }
-        if (! config('okyema.ai.enabled')) {
-            $missing[] = 'AI_ENABLED is not true';
+        if (! $this->visionEnabled()) {
+            $missing[] = 'AI vision is not enabled (AI_VISION_ENABLED / AI_ENABLED)';
         }
-        if (! filled(config('okyema.ai.api_key'))) {
-            $missing[] = 'AI_API_KEY is empty';
+        if (! filled($this->visionApiKey())) {
+            $missing[] = 'AI vision API key is empty (AI_VISION_API_KEY / AI_API_KEY)';
         }
-        if (! filled(config('okyema.ai.base_url'))) {
-            $missing[] = 'AI_BASE_URL is empty';
+        if (! filled($this->visionBaseUrl())) {
+            $missing[] = 'AI vision base URL is empty (AI_VISION_BASE_URL / AI_BASE_URL)';
         }
 
         return $missing;
@@ -60,12 +60,12 @@ final class ReceiptScanner
             return null;
         }
 
-        $model = config('okyema.ai.vision_model') ?: config('okyema.ai.model');
+        $model = $this->visionModel();
 
         try {
             $response = Http::timeout((int) config('okyema.ai.timeout_seconds', 30))
-                ->withToken((string) config('okyema.ai.api_key'))
-                ->post(rtrim((string) config('okyema.ai.base_url'), '/').'/chat/completions', [
+                ->withToken($this->visionApiKey())
+                ->post(rtrim($this->visionBaseUrl(), '/').'/chat/completions', [
                     'model' => $model,
                     'messages' => [
                         [
@@ -100,6 +100,31 @@ final class ReceiptScanner
 
             return null;
         }
+    }
+
+    private function visionEnabled(): bool
+    {
+        $vision = config('okyema.ai.vision_enabled');
+        if ($vision === null || $vision === '') {
+            $vision = config('okyema.ai.enabled');
+        }
+
+        return filter_var($vision, FILTER_VALIDATE_BOOLEAN);
+    }
+
+    private function visionApiKey(): string
+    {
+        return (string) (config('okyema.ai.vision_api_key') ?: config('okyema.ai.api_key'));
+    }
+
+    private function visionBaseUrl(): string
+    {
+        return (string) (config('okyema.ai.vision_base_url') ?: config('okyema.ai.base_url'));
+    }
+
+    private function visionModel(): string
+    {
+        return (string) (config('okyema.ai.vision_model') ?: config('okyema.ai.model'));
     }
 
     /**

@@ -89,11 +89,19 @@ return [
         'provider' => env('AI_PROVIDER', 'openai'),
         'api_key' => env('AI_API_KEY', ''),
         'model' => env('AI_MODEL', ''),
-        'vision_model' => env('AI_VISION_MODEL', ''),
         'base_url' => env('AI_BASE_URL', ''),
         'timeout_seconds' => env('AI_TIMEOUT_SECONDS', 30),
         'max_tokens' => env('AI_MAX_TOKENS', 2000),
         'temperature' => env('AI_TEMPERATURE', 0.2),
+
+        // Vision (receipt scanning). Chat can run on a provider with no image
+        // support (e.g. DeepSeek) while receipt photos go to a vision-capable
+        // endpoint. Each vision_* key falls back to the chat value above when
+        // left empty, so a single provider keeps working unchanged.
+        'vision_enabled' => env('AI_VISION_ENABLED', env('AI_ENABLED', false)),
+        'vision_model' => env('AI_VISION_MODEL', ''),
+        'vision_api_key' => env('AI_VISION_API_KEY', ''),
+        'vision_base_url' => env('AI_VISION_BASE_URL', ''),
     ],
 
     /*
