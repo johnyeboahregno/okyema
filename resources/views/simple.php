@@ -48,73 +48,184 @@ $aiInfo = [
 
     <main class="simple-main">
         <p class="simple-notice" v-if="notice" role="status" @click="notice = ''">{{ notice }}</p>
-        <section class="simple-main__results" aria-live="polite">
-            <p class="empty-hint" v-if="!results.length && !loading">Ask a question, find a detail or get something moving.</p>
 
-            <div class="message message--user" v-for="m in userResults" :key="m.id">
-                <div class="message__bubble">{{ m.text }}</div>
-            </div>
+        <nav class="page-dots" aria-label="Pages">
+            <button class="page-dot" v-for="(p, i) in pages" :key="p.key" type="button"
+                    :class="{'is-active': i === currentPage}"
+                    :aria-label="p.label" :aria-current="i === currentPage ? 'page' : undefined"
+                    @click="goToPage(i)">
+                <svg v-if="p.key === 'ask'" class="page-dot__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"/></svg>
+                <svg v-else-if="p.key === 'notes'" class="page-dot__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"/><path d="M19 10v2a7 7 0 0 1-14 0v-2"/><line x1="12" y1="19" x2="12" y2="23"/><line x1="8" y1="23" x2="16" y2="23"/></svg>
+                <svg v-else-if="p.key === 'calendar'" class="page-dot__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+                <svg v-else-if="p.key === 'transcripts'" class="page-dot__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>
+                <svg v-else class="page-dot__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="20 6 9 17 4 12"/></svg>
+            </button>
+        </nav>
 
-            <template v-for="m in assistantResults" :key="m.id">
-                <div class="message message--assistant">
-                    <div class="message__bubble">{{ m.text }}</div>
-                    <div class="sources" v-if="m.sources && m.sources.length">
-                        <a class="source" v-for="s in m.sources" :key="s.url" :href="s.url" target="_blank" rel="noopener noreferrer">↗ {{ s.title }}</a>
+        <div class="pages" ref="pages" @scroll.passive="onPagesScroll">
+            <section class="page page--ask">
+                <section class="simple-main__results" aria-live="polite">
+                    <p class="empty-hint" v-if="!results.length && !loading">Ask a question, find a detail or get something moving.</p>
+
+                    <div class="message message--user" v-for="m in userResults" :key="m.id">
+                        <div class="message__bubble">{{ m.text }}</div>
                     </div>
 
-                    <div class="approval" v-if="m.approval && !m.approvalState">
-                        <div class="approval__title">{{ m.approval.title }}</div>
-                        <div class="approval__summary">This change needs your approval before it is made.</div>
-                        <div class="approval__actions">
-                            <button class="btn btn--primary" type="button" @click="approve(m)">Approve</button>
-                            <button class="btn btn--ghost" type="button" @click="reject(m)">Cancel</button>
+                    <template v-for="m in assistantResults" :key="m.id">
+                        <div class="message message--assistant">
+                            <div class="message__bubble">{{ m.text }}</div>
+                            <div class="sources" v-if="m.sources && m.sources.length">
+                                <a class="source" v-for="s in m.sources" :key="s.url" :href="s.url" target="_blank" rel="noopener noreferrer">↗ {{ s.title }}</a>
+                            </div>
+
+                            <div class="approval" v-if="m.approval && !m.approvalState">
+                                <div class="approval__title">{{ m.approval.title }}</div>
+                                <div class="approval__summary">This change needs your approval before it is made.</div>
+                                <div class="approval__actions">
+                                    <button class="btn btn--primary" type="button" @click="approve(m)">Approve</button>
+                                    <button class="btn btn--ghost" type="button" @click="reject(m)">Cancel</button>
+                                </div>
+                            </div>
+                            <div class="approval__state" v-if="m.approvalState === 'approved'">✓ Change made.</div>
+                            <div class="approval__state" v-if="m.approvalState === 'cancelled'">Change cancelled.</div>
+                            <div class="error-bar" v-if="m.approvalState === 'failed'">{{ m.approvalError || 'The change could not be made.' }}</div>
+
+                            <div class="notice-bar" v-if="m.notice">{{ m.notice }}</div>
+                        </div>
+                    </template>
+
+                    <div class="error-bar" v-if="error">{{ error }}</div>
+                </section>
+
+                <section class="simple-main__composer">
+                    <div class="composer">
+                        <h1>What’s on your mind<em>?</em></h1>
+                        <p class="composer__sub">Type it. Say it. Okyema takes it from there.</p>
+
+                        <textarea id="ask" ref="ask" v-model="query" aria-label="Ask Okyema"
+                                  placeholder="Ask Okyema anything…"
+                                  @keydown.enter.exact.prevent="send()"></textarea>
+
+                        <div class="transcript-note" v-if="transcribed && query">
+                            <span>Transcribed — review and edit, then send.</span>
+                        </div>
+
+                        <div class="composer__foot">
+                            <span class="composer__status" :class="{'is-live': loading}">{{ loading ? 'Thinking…' : '✦ Assistant ready' }}</span>
+                            <button class="btn btn--primary" type="button" :disabled="loading || !query.trim()" @click="send()">Send ↑</button>
+                        </div>
+
+                        <button class="mic-btn" type="button" :class="{'is-recording': recording}"
+                                :aria-label="recording ? 'Stop recording' : 'Start voice input'"
+                                @click="startVoice">
+                            <span aria-hidden="true">🎤</span>
+                            <span>{{ recording ? 'Listening… tap to stop' : 'Voice' }}</span>
+                        </button>
+
+                        <div class="error-bar" v-if="voiceError">{{ voiceError }}</div>
+
+                        <div class="suggestions" v-if="!results.length && !loading">
+                            <button class="suggestion" type="button" @click="suggest('Plan my day')">✦ Plan my day</button>
+                            <button class="suggestion" type="button" @click="suggest('What did we decide in the last meeting?')">◷ Last meeting</button>
+                            <button class="suggestion" type="button" @click="suggest('Find my outstanding actions')">✓ My actions</button>
                         </div>
                     </div>
-                    <div class="approval__state" v-if="m.approvalState === 'approved'">✓ Change made.</div>
-                    <div class="approval__state" v-if="m.approvalState === 'cancelled'">Change cancelled.</div>
-                    <div class="error-bar" v-if="m.approvalState === 'failed'">{{ m.approvalError || 'The change could not be made.' }}</div>
+                </section>
+            </section>
 
-                    <div class="notice-bar" v-if="m.notice">{{ m.notice }}</div>
+            <section class="page page--notes">
+                <div class="composer">
+                    <div class="page__head">
+                        <h2>Note Taker</h2>
+                        <button class="modal__close" type="button" aria-label="Back to ask" @click="goToPage(0)">×</button>
+                    </div>
+
+                    <label class="field"><span>Title</span><input v-model="recorderTitle" placeholder="e.g. Weekly team sync"></label>
+
+                    <div class="recorder">
+                        <button class="recorder__btn" type="button" :class="{'is-recording': recorderActive}" @click="toggleRecorder">
+                            <span v-if="!recorderActive">● Start</span>
+                            <span v-else>■ Stop</span>
+                        </button>
+                        <span class="recorder__time" v-if="recorderActive">{{ recorderTime }}</span>
+                    </div>
+
+                    <p class="readonly-note" v-if="recorderStatus">{{ recorderStatus }}</p>
+                    <p class="readonly-note">Audio is transcribed on-device (Whisper) and filed as a meeting with a transcript note. The speech model downloads once on first use.</p>
                 </div>
-            </template>
+            </section>
 
-            <div class="error-bar" v-if="error">{{ error }}</div>
-        </section>
-
-        <section class="simple-main__composer">
-            <div class="composer">
-                <h1>What’s on your mind<em>?</em></h1>
-                <p class="composer__sub">Type it. Say it. Okyema takes it from there.</p>
-
-                <textarea id="ask" ref="ask" v-model="query" aria-label="Ask Okyema"
-                          placeholder="Ask Okyema anything…"
-                          @keydown.enter.exact.prevent="send()"></textarea>
-
-                <div class="transcript-note" v-if="transcribed && query">
-                    <span>Transcribed — review and edit, then send.</span>
+            <section class="page page--calendar">
+                <div class="page__head">
+                    <h2>Calendar</h2>
+                    <p class="muted">{{ calendarDate }}</p>
                 </div>
 
-                <div class="composer__foot">
-                    <span class="composer__status" :class="{'is-live': loading}">{{ loading ? 'Thinking…' : '✦ Assistant ready' }}</span>
-                    <button class="btn btn--primary" type="button" :disabled="loading || !query.trim()" @click="send()">Send ↑</button>
+                <p class="empty-hint" v-if="!calendarEvents.length && !transcripts.length">Nothing scheduled today.</p>
+
+                <div class="agenda__item" v-for="e in calendarEvents" :key="'event-' + e.id">
+                    <span class="agenda__time">{{ e.is_all_day ? 'All day' : e.time_label }}</span>
+                    <div class="agenda__body">
+                        <div class="agenda__title">{{ e.title }}</div>
+                        <div class="agenda__meta" v-if="e.location">{{ e.location }}</div>
+                    </div>
                 </div>
 
-                <button class="mic-btn" type="button" :class="{'is-recording': recording}"
-                        :aria-label="recording ? 'Stop recording' : 'Start voice input'"
-                        @click="startVoice">
-                    <span aria-hidden="true">🎤</span>
-                    <span>{{ recording ? 'Listening… tap to stop' : 'Voice' }}</span>
-                </button>
+                <h3 class="section-title" v-if="transcripts.length">Recordings</h3>
 
-                <div class="error-bar" v-if="voiceError">{{ voiceError }}</div>
-
-                <div class="suggestions" v-if="!results.length && !loading">
-                    <button class="suggestion" type="button" @click="suggest('Plan my day')">✦ Plan my day</button>
-                    <button class="suggestion" type="button" @click="suggest('What did we decide in the last meeting?')">◷ Last meeting</button>
-                    <button class="suggestion" type="button" @click="suggest('Find my outstanding actions')">✓ My actions</button>
+                <div class="agenda__item" v-for="t in transcripts" :key="'recording-' + t.id">
+                    <span class="agenda__time">{{ t.starts_at ? timeLabel(t.starts_at) : 'Recording' }}</span>
+                    <div class="agenda__body">
+                        <div class="agenda__title">{{ t.title }}</div>
+                        <div class="agenda__meta">{{ t.transcript }}</div>
+                    </div>
                 </div>
-            </div>
-        </section>
+            </section>
+
+            <section class="page page--transcripts">
+                <div class="page__head">
+                    <h2>Transcripts</h2>
+                </div>
+
+                <p class="empty-hint" v-if="!transcripts.length">No recorded meetings yet. Record one from the Note Taker page.</p>
+
+                <div class="transcript" v-for="t in transcripts" :key="t.id" @click="toggleTranscript(t.id)">
+                    <div class="transcript__head">
+                        <div class="transcript__title">{{ t.title }}</div>
+                        <div class="transcript__actions" @click.stop>
+                            <button class="transcript__action" type="button" :aria-label="copiedId === t.id ? 'Copied' : 'Copy transcript'" @click="copyTranscript(t)">
+                                <svg v-if="copiedId !== t.id" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+                                <svg v-else viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                            </button>
+                            <button class="transcript__action" type="button" aria-label="Share transcript" @click="shareTranscript(t)">
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><line x1="8.59" y1="13.51" x2="15.42" y2="17.49"/><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"/></svg>
+                            </button>
+                            <button class="transcript__action transcript__action--danger" type="button" aria-label="Delete transcript" @click="deleteTranscript(t)">
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>
+                            </button>
+                        </div>
+                    </div>
+                    <div class="transcript__meta" v-if="expandedTranscript !== t.id">Tap to read</div>
+                    <template v-if="expandedTranscript === t.id">
+                        <div v-if="t.formatted_html" class="transcript__html" v-html="t.formatted_html"></div>
+                        <div v-else class="transcript__body">{{ t.transcript }}</div>
+                    </template>
+                </div>
+            </section>
+
+            <section class="page page--actions">
+                <div class="page__head">
+                    <h2>Actions</h2>
+                </div>
+
+                <p class="empty-hint" v-if="!actions.length">No actions today.</p>
+
+                <div class="action" v-for="a in actions" :key="a.id">
+                    <div class="action__title">{{ a.title }}</div>
+                    <div class="action__meta" v-if="a.due_date">Due {{ a.due_date }}</div>
+                </div>
+            </section>
+        </div>
     </main>
 
     <!-- Settings -->
@@ -163,6 +274,23 @@ $aiInfo = [
             <p class="readonly-note">Okyema v<?= e(config('okyema.app.version')) ?> · Powered by Regno AI</p>
         </div>
     </div>
+
+    <!-- Delete transcript confirmation -->
+    <div class="modal-backdrop" v-if="deleteTarget" @click.self="cancelDelete">
+        <div class="modal" role="dialog" aria-modal="true" aria-label="Delete transcript" @keydown.esc="cancelDelete">
+            <div class="modal__head">
+                <h2>Delete transcript?</h2>
+                <button class="modal__close" type="button" aria-label="Close" @click="cancelDelete">×</button>
+            </div>
+
+            <p class="readonly-note">This will permanently delete "{{ deleteTarget.title }}". This cannot be undone.</p>
+
+            <div class="modal__actions">
+                <button class="btn btn--ghost" type="button" @click="cancelDelete">Cancel</button>
+                <button class="btn btn--danger" type="button" @click="confirmDelete">Delete</button>
+            </div>
+        </div>
+    </div>
 </div>
 
 <script src="https://cdn.jsdelivr.net/npm/vue@3.4.38/dist/vue.global.prod.js"></script>
@@ -190,6 +318,16 @@ async function api(method, path, body) {
 }
 
 let recognition = null;
+let recorderTimer = null;
+let recorder = null;
+let transcriber = null;
+
+async function getTranscriber() {
+    if (transcriber) return transcriber;
+    const { pipeline } = await import('https://cdn.jsdelivr.net/npm/@huggingface/transformers@3.3.3');
+    transcriber = await pipeline('automatic-speech-recognition', 'Xenova/whisper-base.en');
+    return transcriber;
+}
 
 Vue.createApp({
     data() {
@@ -211,15 +349,43 @@ Vue.createApp({
             connectors: [],
             ai: <?= json_encode($aiInfo) ?>,
             notice: <?= json_encode($connectorNotice ?? '') ?>,
+            currentPage: 0,
+            pages: [
+                { key: 'ask', label: "What's on your mind" },
+                { key: 'notes', label: 'Note Taker' },
+                { key: 'calendar', label: 'Calendar' },
+                { key: 'transcripts', label: 'Transcripts' },
+                { key: 'actions', label: 'Actions' },
+            ],
+            calendarEvents: [],
+            calendarDate: '',
+            actions: [],
+            transcripts: [],
+            expandedTranscript: null,
+            copiedId: null,
+            deleteTarget: null,
+            recorderTitle: '',
+            recordingStartedAt: '',
+            recorderActive: false,
+            recorderSeconds: 0,
+            recorderStatus: '',
         };
     },
     computed: {
         userResults() { return this.results.filter(r => r.role === 'user'); },
         assistantResults() { return this.results.filter(r => r.role === 'assistant'); },
+        recorderTime() {
+            const m = Math.floor(this.recorderSeconds / 60);
+            const s = String(this.recorderSeconds % 60).padStart(2, '0');
+            return m + ':' + s;
+        },
     },
     mounted() {
         this.theme = localStorage.getItem('okyema.theme') || 'system';
         this.applyTheme();
+        this.loadCalendar();
+        this.loadActions();
+        this.loadTranscripts();
         document.addEventListener('click', this.onDocumentClick);
         this.loadAll()
             .then(() => {
@@ -397,6 +563,188 @@ Vue.createApp({
             } catch (e) {
                 this.error = e.message || 'Could not disconnect.';
             }
+        },
+        goToPage(i) {
+            const el = this.$refs.pages;
+            if (!el) return;
+            el.scrollTo({ left: i * el.clientWidth, behavior: 'smooth' });
+            this.currentPage = i;
+        },
+        onPagesScroll() {
+            const el = this.$refs.pages;
+            if (!el || !el.clientWidth) return;
+            this.currentPage = Math.round(el.scrollLeft / el.clientWidth);
+        },
+        async loadCalendar() {
+            try {
+                const data = await api('GET', '/api/agenda');
+                this.calendarEvents = (data && data.events) || [];
+                this.calendarDate = (data && data.date) || '';
+            } catch (e) { /* ignore */ }
+        },
+        async loadActions() {
+            try {
+                this.actions = await api('GET', '/api/actions?view=today');
+            } catch (e) { /* ignore */ }
+        },
+        async loadTranscripts() {
+            try {
+                this.transcripts = await api('GET', '/api/transcripts');
+            } catch (e) { /* ignore */ }
+        },
+        timeLabel(iso) {
+            const d = new Date(iso);
+            if (Number.isNaN(d.getTime())) return '';
+            return String(d.getHours()).padStart(2, '0') + ':' + String(d.getMinutes()).padStart(2, '0');
+        },
+        toggleTranscript(id) {
+            this.expandedTranscript = this.expandedTranscript === id ? null : id;
+        },
+        deleteTranscript(t) {
+            this.deleteTarget = t;
+        },
+        cancelDelete() {
+            this.deleteTarget = null;
+        },
+        async confirmDelete() {
+            const t = this.deleteTarget;
+            if (!t) return;
+            this.deleteTarget = null;
+            try {
+                await api('DELETE', `/api/transcripts/${t.id}`);
+                this.transcripts = this.transcripts.filter(x => x.id !== t.id);
+                if (this.expandedTranscript === t.id) this.expandedTranscript = null;
+            } catch (e) {
+                this.error = e.message || 'Could not delete.';
+            }
+        },
+        async copyTranscript(t) {
+            try {
+                await navigator.clipboard.writeText(t.transcript || '');
+                this.copiedId = t.id;
+                setTimeout(() => { if (this.copiedId === t.id) this.copiedId = null; }, 1500);
+            } catch (e) {
+                this.error = 'Could not copy.';
+            }
+        },
+        async shareTranscript(t) {
+            if (!navigator.share) {
+                this.notice = 'Sharing is not supported on this device — use Copy.';
+                return;
+            }
+            try {
+                await navigator.share({ title: t.title, text: t.transcript || '' });
+            } catch (e) {
+                if (e && e.name !== 'AbortError') {
+                    this.notice = 'Could not share.';
+                }
+            }
+        },
+        toggleRecorder() {
+            if (this.recorderActive) this.stopRecorder();
+            else this.startRecorder();
+        },
+        async startRecorder() {
+            this.recorderStatus = '';
+            if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+                this.recorderStatus = 'Recording is not supported in this browser.';
+                return;
+            }
+            let stream;
+            try {
+                stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+            } catch (e) {
+                this.recorderStatus = 'Microphone access was denied. Please allow it and try again.';
+                return;
+            }
+
+            const AudioCtx = window.AudioContext || window.webkitAudioContext;
+            if (!AudioCtx || !AudioCtx.prototype.createScriptProcessor) {
+                stream.getTracks().forEach(t => t.stop());
+                this.recorderStatus = 'Recording is not supported in this browser.';
+                return;
+            }
+
+            const audioCtx = new AudioCtx();
+            const source = audioCtx.createMediaStreamSource(stream);
+            const processor = audioCtx.createScriptProcessor(4096, 1, 1);
+            const chunks = [];
+
+            processor.onaudioprocess = (e) => {
+                const channel = e.inputBuffer.getChannelData(0);
+                if (channel && channel.length) chunks.push(new Float32Array(channel));
+            };
+
+            source.connect(processor);
+            const mute = audioCtx.createGain();
+            mute.gain.value = 0;
+            processor.connect(mute);
+            mute.connect(audioCtx.destination);
+
+            recorder = { audioCtx, chunks, stream, sampleRate: audioCtx.sampleRate };
+            this.recordingStartedAt = new Date().toISOString();
+
+            this.recorderActive = true;
+            this.recorderSeconds = 0;
+            recorderTimer = setInterval(() => { this.recorderSeconds += 1; }, 1000);
+        },
+        stopRecorder() {
+            if (recorderTimer) { clearInterval(recorderTimer); recorderTimer = null; }
+            if (!recorder) return;
+
+            const { audioCtx, chunks, stream, sampleRate } = recorder;
+            recorder = null;
+            this.recorderActive = false;
+
+            stream.getTracks().forEach(t => t.stop());
+            try { audioCtx.close(); } catch (e) { /* ignore */ }
+
+            this.transcribePcm(chunks, sampleRate);
+        },
+        async transcribePcm(chunks, sampleRate) {
+            if (!chunks.length) {
+                this.recorderStatus = 'No audio was captured.';
+                return;
+            }
+
+            const total = chunks.reduce((n, c) => n + c.length, 0);
+            const pcm = new Float32Array(total);
+            let offset = 0;
+            for (const c of chunks) { pcm.set(c, offset); offset += c.length; }
+
+            this.recorderStatus = 'Loading speech model… (first use may take a minute)';
+            const transcriber = await getTranscriber();
+            this.recorderStatus = 'Transcribing…';
+
+            const audio = await this.resample(pcm, sampleRate, 16000);
+            const output = await transcriber(audio);
+            const transcript = ((output && output.text) || '').trim();
+
+            if (!transcript) {
+                this.recorderStatus = 'No speech was detected.';
+                return;
+            }
+
+            await api('POST', '/api/transcripts', {
+                title: (this.recorderTitle || '').trim() || 'Meeting recording',
+                transcript,
+                starts_at: this.recordingStartedAt || null,
+                ends_at: new Date().toISOString(),
+            });
+            this.recorderStatus = 'Saved — transcript filed as a meeting.';
+            this.recorderTitle = '';
+        },
+        resample(pcm, fromRate, toRate) {
+            if (fromRate === toRate) return Promise.resolve(pcm);
+            const length = Math.max(1, Math.ceil(pcm.length * toRate / fromRate));
+            const offline = new OfflineAudioContext(1, length, toRate);
+            const buffer = offline.createBuffer(1, pcm.length, fromRate);
+            buffer.copyToChannel(pcm, 0);
+            const source = offline.createBufferSource();
+            source.buffer = buffer;
+            source.connect(offline.destination);
+            source.start();
+            return offline.startRendering().then(rendered => rendered.getChannelData(0));
         },
         toggleTheme() {
             this.theme = this.theme === 'light' ? 'dark' : this.theme === 'dark' ? 'system' : 'light';

@@ -24,6 +24,7 @@ class Meeting extends Model
         'starts_at',
         'ends_at',
         'classification',
+        'formatted_html',
     ];
 
     protected function casts(): array

@@ -19,8 +19,10 @@ use App\Http\Controllers\Api\MeetingController;
 use App\Http\Controllers\Api\PeopleController;
 use App\Http\Controllers\Api\ProfileController;
 use App\Http\Controllers\Api\ReceiptController;
+use App\Http\Controllers\Api\RecordingController;
 use App\Http\Controllers\Api\SearchController;
 use App\Http\Controllers\Api\TripController;
+use App\Http\Controllers\Api\WebhookController;
 use Illuminate\Support\Facades\Route;
 
 /*
@@ -32,6 +34,10 @@ use Illuminate\Support\Facades\Route;
 // Public auth
 Route::post('/register', [AuthController::class, 'register']);
 Route::post('/login', [AuthController::class, 'login']);
+
+// Public inbound webhook: AssemblyAI pushes the finished transcript here.
+// Authenticated by a shared secret header, verified in the controller.
+Route::post('/webhooks/assemblyai', [WebhookController::class, 'assemblyai']);
 
 // Authenticated (every resource is strictly scoped to the signed-in user)
 Route::middleware('auth:sanctum')->group(function () {
@@ -88,6 +94,11 @@ Route::middleware('auth:sanctum')->group(function () {
 
     Route::post('/approvals/{approval}/approve', [ApprovalController::class, 'approve']);
     Route::post('/approvals/{approval}/reject', [ApprovalController::class, 'reject']);
+
+    Route::post('/recordings', [RecordingController::class, 'store']);
+    Route::get('/transcripts', [RecordingController::class, 'index']);
+    Route::post('/transcripts', [RecordingController::class, 'storeTranscript']);
+    Route::delete('/transcripts/{meeting}', [RecordingController::class, 'destroy']);
 
     Route::get('/trips', [TripController::class, 'index']);
     Route::post('/trips', [TripController::class, 'store']);

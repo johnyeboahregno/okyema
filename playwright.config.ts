@@ -63,6 +63,8 @@ export default defineConfig({
       DB_CONNECTION: 'sqlite',
       DB_DATABASE: E2E_DB,
       SESSION_DRIVER: 'file',
+      AI_ENABLED: 'false',
+      OKYEMA_UI_MODE: process.env.OKYEMA_E2E_UI_MODE ?? 'classic',
       SANCTUM_STATEFUL_DOMAINS: `127.0.0.1:${PORT},localhost:${PORT}`,
     },
   },

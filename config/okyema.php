@@ -106,6 +106,19 @@ return [
 
     /*
     |--------------------------------------------------------------------------
+    | Meeting transcription (AssemblyAI)
+    |--------------------------------------------------------------------------
+    | Recordings are uploaded from the browser, transcribed off-device and
+    | pushed back to the webhook. Disabled until ASSEMBLYAI_API_KEY is set.
+    */
+    'transcription' => [
+        'provider' => env('TRANSCRIPTION_PROVIDER', 'assemblyai'),
+        'api_key' => env('ASSEMBLYAI_API_KEY', ''),
+        'webhook_secret' => env('ASSEMBLYAI_WEBHOOK_SECRET', ''),
+    ],
+
+    /*
+    |--------------------------------------------------------------------------
     | Receipt capture (Milestone 3)
     |--------------------------------------------------------------------------
     */

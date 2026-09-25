@@ -12,6 +12,8 @@ test('guests are redirected straight to login', function () {
 });
 
 test('signed-in users get the app shell', function () {
+    config()->set('okyema.ui.mode', 'classic');
+
     $user = User::factory()->create();
 
     $this->actingAs($user)->get('/')
