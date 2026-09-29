@@ -158,28 +158,48 @@ $aiInfo = [
             <section class="page page--calendar">
                 <div class="page__head">
                     <h2>Calendar</h2>
-                    <p class="muted">{{ calendarDate }}</p>
+                    <div class="calendar__nav">
+                        <button class="calendar__nav-btn" type="button" aria-label="Previous month" @click="prevMonth">‹</button>
+                        <span class="calendar__month">{{ calendarMonthLabel }}</span>
+                        <button class="calendar__nav-btn" type="button" aria-label="Next month" @click="nextMonth">›</button>
+                    </div>
                 </div>
 
-                <p class="empty-hint" v-if="!calendarEvents.length && !transcripts.length">Nothing scheduled today.</p>
+                <div class="calendar">
+                    <div class="calendar__weekdays">
+                        <span v-for="w in ['Mon','Tue','Wed','Thu','Fri','Sat','Sun']" :key="w">{{ w }}</span>
+                    </div>
+                    <div class="calendar__grid">
+                        <button v-for="d in calendarDays" :key="d.iso" type="button"
+                                class="calendar__day" :class="{'is-outside': !d.inMonth, 'is-today': d.isToday, 'is-selected': d.iso === selectedDay}"
+                                @click="selectDay(d)">
+                            <span class="calendar__daynum">{{ d.date.getDate() }}</span>
+                            <span v-if="d.eventCount || d.recordingCount" class="calendar__dots" aria-hidden="true">
+                                <span v-if="d.eventCount" class="calendar__dot calendar__dot--event"></span>
+                                <span v-if="d.recordingCount" class="calendar__dot calendar__dot--recording"></span>
+                            </span>
+                        </button>
+                    </div>
+                </div>
 
-                <div class="agenda__item" v-for="e in calendarEvents" :key="'event-' + e.id">
-                    <span class="agenda__time">{{ e.is_all_day ? 'All day' : e.time_label }}</span>
+                <h3 class="section-title" v-if="selectedEvents.length">Events</h3>
+                <div class="agenda__item" v-for="e in selectedEvents" :key="'event-' + e.id">
+                    <span class="agenda__time">{{ e.time_label }}</span>
                     <div class="agenda__body">
                         <div class="agenda__title">{{ e.title }}</div>
                         <div class="agenda__meta" v-if="e.location">{{ e.location }}</div>
                     </div>
                 </div>
 
-                <h3 class="section-title" v-if="transcripts.length">Recordings</h3>
-
-                <div class="agenda__item" v-for="t in transcripts" :key="'recording-' + t.id">
+                <h3 class="section-title" v-if="selectedRecordings.length">Recordings</h3>
+                <div class="agenda__item" v-for="t in selectedRecordings" :key="'recording-' + t.id">
                     <span class="agenda__time">{{ t.starts_at ? timeLabel(t.starts_at) : 'Recording' }}</span>
                     <div class="agenda__body">
                         <div class="agenda__title">{{ t.title }}</div>
-                        <div class="agenda__meta">{{ t.transcript }}</div>
                     </div>
                 </div>
+
+                <p class="empty-hint" v-if="!selectedEvents.length && !selectedRecordings.length">Nothing on this day.</p>
             </section>
 
             <section class="page page--transcripts">
@@ -357,8 +377,9 @@ Vue.createApp({
                 { key: 'transcripts', label: 'Transcripts' },
                 { key: 'actions', label: 'Actions' },
             ],
+            calendarCursor: null,
+            selectedDay: null,
             calendarEvents: [],
-            calendarDate: '',
             actions: [],
             transcripts: [],
             expandedTranscript: null,
@@ -379,11 +400,45 @@ Vue.createApp({
             const s = String(this.recorderSeconds % 60).padStart(2, '0');
             return m + ':' + s;
         },
+        calendarMonthLabel() {
+            if (!this.calendarCursor) return '';
+            return this.calendarCursor.toLocaleString('default', { month: 'long', year: 'numeric' });
+        },
+        calendarDays() {
+            if (!this.calendarCursor) return [];
+            const year = this.calendarCursor.getFullYear();
+            const month = this.calendarCursor.getMonth();
+            const startWeekday = (new Date(year, month, 1).getDay() + 6) % 7;
+            const start = new Date(year, month, 1 - startWeekday);
+            const days = [];
+            for (let i = 0; i < 42; i++) {
+                const d = new Date(start.getFullYear(), start.getMonth(), start.getDate() + i);
+                const iso = this.isoDate(d);
+                days.push({
+                    date: d,
+                    iso,
+                    inMonth: d.getMonth() === month,
+                    isToday: iso === this.isoDate(new Date()),
+                    recordingCount: this.recordingsForDay(iso).length,
+                    eventCount: this.eventsForDay(iso).length,
+                });
+            }
+            return days;
+        },
+        selectedRecordings() {
+            return this.selectedDay ? this.recordingsForDay(this.selectedDay) : [];
+        },
+        selectedEvents() {
+            return this.selectedDay ? this.eventsForDay(this.selectedDay) : [];
+        },
     },
     mounted() {
         this.theme = localStorage.getItem('okyema.theme') || 'system';
         this.applyTheme();
-        this.loadCalendar();
+        const now = new Date();
+        this.calendarCursor = new Date(now.getFullYear(), now.getMonth(), 1);
+        this.selectedDay = this.isoDate(now);
+        this.loadMonthEvents();
         this.loadActions();
         this.loadTranscripts();
         document.addEventListener('click', this.onDocumentClick);
@@ -575,11 +630,44 @@ Vue.createApp({
             if (!el || !el.clientWidth) return;
             this.currentPage = Math.round(el.scrollLeft / el.clientWidth);
         },
-        async loadCalendar() {
+        prevMonth() {
+            const c = this.calendarCursor;
+            this.calendarCursor = new Date(c.getFullYear(), c.getMonth() - 1, 1);
+            this.loadMonthEvents();
+        },
+        nextMonth() {
+            const c = this.calendarCursor;
+            this.calendarCursor = new Date(c.getFullYear(), c.getMonth() + 1, 1);
+            this.loadMonthEvents();
+        },
+        selectDay(day) {
+            this.selectedDay = day.iso;
+        },
+        isoDate(d) {
+            return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0');
+        },
+        recordingsForDay(iso) {
+            return this.transcripts.filter(t => {
+                if (!t.starts_at) return false;
+                const d = new Date(t.starts_at);
+                return !Number.isNaN(d.getTime()) && this.isoDate(d) === iso;
+            });
+        },
+        eventsForDay(iso) {
+            return this.calendarEvents.filter(e => {
+                if (!e.starts_at) return false;
+                const d = new Date(e.starts_at);
+                return !Number.isNaN(d.getTime()) && this.isoDate(d) === iso;
+            });
+        },
+        async loadMonthEvents() {
+            const c = this.calendarCursor;
+            if (!c) return;
+            const from = this.isoDate(new Date(c.getFullYear(), c.getMonth(), 1));
+            const to = this.isoDate(new Date(c.getFullYear(), c.getMonth() + 1, 0));
             try {
-                const data = await api('GET', '/api/agenda');
+                const data = await api('GET', `/api/timeline?from=${from}&to=${to}`);
                 this.calendarEvents = (data && data.events) || [];
-                this.calendarDate = (data && data.date) || '';
             } catch (e) { /* ignore */ }
         },
         async loadActions() {
