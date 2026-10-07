@@ -24,28 +24,8 @@ $maxRequest = 60000;
 <body>
 <div id="app" class="big-app" v-cloak @dragover.prevent @drop.prevent="onDrop">
     <header class="big-header">
-        <div class="big-brand">
-            <svg class="big-mark" viewBox="0 0 48 48" fill="none" aria-hidden="true">
-                <g stroke="#43C7A7" stroke-width="2.4" stroke-linecap="round">
-                    <path d="M12 12 24 24 36 12"/>
-                    <path d="M12 36 24 24 36 36"/>
-                    <path d="M24 8v32"/>
-                </g>
-                <g fill="#43C7A7">
-                    <circle cx="12" cy="12" r="4.2"/>
-                    <circle cx="36" cy="12" r="4.2"/>
-                    <circle cx="12" cy="36" r="4.2"/>
-                    <circle cx="36" cy="36" r="4.2"/>
-                    <circle cx="24" cy="8" r="4.2"/>
-                    <circle cx="24" cy="40" r="4.2"/>
-                    <circle cx="24" cy="24" r="5.2"/>
-                </g>
-            </svg>
-            <div class="big-wordmark">
-                <span class="big-wordmark__name">OKYEMA</span>
-                <span class="big-wordmark__tag"><?= e((string) config('okyema.app.tagline', 'Your intelligent chief of staff')) ?></span>
-            </div>
-        </div>
+        <img class="big-header__logo big-logo--light" src="<?= e($base) ?>/assets/logos/okyema-logo-light.svg" alt="Okyema">
+        <img class="big-header__logo big-logo--dark" src="<?= e($base) ?>/assets/logos/okyema-logo-dark.svg" alt="Okyema">
 
         <div class="big-header__actions">
             <button class="big-theme" type="button" @click="toggleTheme" :aria-label="'Theme: ' + theme">◐</button>
