@@ -171,6 +171,94 @@ test('approving a Notion change executes the write and rejecting cancels it', fu
         ->assertJsonPath('data.status', 'rejected');
 });
 
+test('a proposed calendar event opens a pending approval and never writes yet', function () {
+    config()->set('okyema.ai.enabled', true);
+
+    $this->mock(AIProviderInterface::class, function ($mock) {
+        $mock->shouldReceive('generateStructuredResponse')->once()->andReturn([
+            'intent' => 'calendar_change',
+            'answer' => 'I can add that to Google Calendar.',
+            'sources' => [],
+            'notion_change' => null,
+            'calendar_change' => [
+                'kind' => 'create',
+                'title' => 'Team sync',
+                'starts_at' => '2026-10-08T15:00:00+01:00',
+                'ends_at' => '2026-10-08T16:00:00+01:00',
+                'timezone' => 'Europe/London',
+                'description' => '',
+                'location' => '',
+            ],
+        ]);
+    });
+
+    Http::fake(fn ($request) => Http::response([]));
+
+    $user = $this->makeUser();
+
+    ConnectorAccount::create([
+        'user_id' => $user->id,
+        'provider' => ConnectorProvider::Google,
+        'status' => ConnectorStatus::Connected,
+        'access_token' => 'google-token',
+        'external_account_id' => 'john@okyema.test',
+    ]);
+
+    $this->actingAs($user)->postJson('/api/assistant', ['request' => 'Add a team sync tomorrow at 3pm'])
+        ->assertOk()
+        ->assertJsonPath('data.approval.kind', 'calendar_event_create')
+        ->assertJsonPath('data.approval.summary', 'Team sync');
+
+    expect(ApprovalRequest::count())->toBe(1);
+    expect(ApprovalRequest::first()->status->value)->toBe('pending');
+
+    Http::assertNotSent(fn ($request) => str_contains($request->url(), 'calendar/v3/calendars/primary/events'));
+});
+
+test('approving a calendar event creates it in Google Calendar', function () {
+    Http::fake([
+        'https://www.googleapis.com/calendar/v3/calendars/primary/events' => Http::response([
+            'id' => 'evt-1',
+            'htmlLink' => 'https://calendar.google.com/event?eid=evt-1',
+            'summary' => 'Team sync',
+        ]),
+    ]);
+
+    $user = $this->makeUser();
+    $regno = WorkspaceContext::where('type', 'REGNO')->firstOrFail();
+
+    ConnectorAccount::create([
+        'user_id' => $user->id,
+        'provider' => ConnectorProvider::Google,
+        'status' => ConnectorStatus::Connected,
+        'access_token' => 'google-token',
+        'external_account_id' => 'john@okyema.test',
+    ]);
+
+    $approval = ApprovalRequest::create([
+        'user_id' => $user->id,
+        'workspace_context_id' => $regno->id,
+        'kind' => 'calendar_event_create',
+        'title' => 'Add to Google Calendar: Team sync',
+        'details' => [
+            'title' => 'Team sync',
+            'starts_at' => '2026-10-08T15:00:00+01:00',
+            'ends_at' => '2026-10-08T16:00:00+01:00',
+            'timezone' => 'Europe/London',
+            'description' => '',
+            'location' => '',
+        ],
+        'status' => 'pending',
+    ]);
+
+    $this->actingAs($user)->postJson("/api/approvals/{$approval->id}/approve")
+        ->assertOk()
+        ->assertJsonPath('data.ok', true)
+        ->assertJsonPath('data.event.id', 'evt-1');
+
+    expect($approval->fresh()->status->value)->toBe('approved');
+});
+
 test('the system prompt instructs the model to emit a notion_change for creates', function () {
     $method = new ReflectionMethod(AssistantService::class, 'systemPrompt');
 
@@ -180,4 +268,64 @@ test('the system prompt instructs the model to emit a notion_change for creates'
         ->toContain('notion_change')
         ->toContain('"create"')
         ->toContain('never refuse for lack of context');
+});
+
+test('the system prompt instructs the model to emit a calendar_change for events', function () {
+    $method = new ReflectionMethod(AssistantService::class, 'systemPrompt');
+
+    $prompt = $method->invoke(app(AssistantService::class));
+
+    expect($prompt)
+        ->toContain('calendar_change')
+        ->toContain('"create"')
+        ->toContain('ISO 8601');
+});
+
+test('approving routes the event to the chosen account and calendar', function () {
+    Http::fake([
+        'https://www.googleapis.com/calendar/v3/calendars/team%40group.calendar.google.com/events' => Http::response([
+            'id' => 'evt-2',
+            'summary' => 'Offsite',
+        ]),
+    ]);
+
+    $user = $this->makeUser();
+    $regno = WorkspaceContext::where('type', 'REGNO')->firstOrFail();
+
+    ConnectorAccount::create([
+        'user_id' => $user->id,
+        'provider' => ConnectorProvider::Google,
+        'status' => ConnectorStatus::Connected,
+        'access_token' => 'first-token',
+        'external_account_id' => 'first@okyema.test',
+    ]);
+    $second = ConnectorAccount::create([
+        'user_id' => $user->id,
+        'provider' => ConnectorProvider::Google,
+        'status' => ConnectorStatus::Connected,
+        'access_token' => 'second-token',
+        'external_account_id' => 'second@okyema.test',
+    ]);
+
+    $approval = ApprovalRequest::create([
+        'user_id' => $user->id,
+        'workspace_context_id' => $regno->id,
+        'kind' => 'calendar_event_create',
+        'title' => 'Add to Team: Offsite',
+        'details' => [
+            'title' => 'Offsite',
+            'starts_at' => '2026-10-08T15:00:00+01:00',
+            'ends_at' => '2026-10-08T16:00:00+01:00',
+            'timezone' => 'Europe/London',
+            'calendar_id' => 'team@group.calendar.google.com',
+            'connector_account_id' => $second->id,
+        ],
+        'status' => 'pending',
+    ]);
+
+    $this->actingAs($user)->postJson("/api/approvals/{$approval->id}/approve")
+        ->assertOk()
+        ->assertJsonPath('data.event.id', 'evt-2');
+
+    Http::assertSent(fn ($r) => $r->hasHeader('Authorization', 'Bearer second-token'));
 });
