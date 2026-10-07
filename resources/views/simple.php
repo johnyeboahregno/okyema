@@ -28,7 +28,9 @@ $maxRequest = 60000;
         <img class="big-header__logo big-logo--dark" src="<?= e($base) ?>/assets/logos/okyema-logo-dark.svg" alt="Okyema">
 
         <div class="big-header__actions">
-            <button class="big-theme" type="button" @click="toggleTheme" :aria-label="'Theme: ' + theme">◐</button>
+            <button class="big-theme" type="button" @click="toggleTheme" :aria-label="'Theme: ' + theme">
+                <svg class="big-theme__icon" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9" fill="none" stroke="currentColor" stroke-width="2"/><path d="M12 3a9 9 0 0 1 0 18z" fill="currentColor"/></svg>
+            </button>
             <button class="big-signout" type="button" @click="logout" aria-label="Sign out">
                 <svg class="big-signout__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
             </button>
