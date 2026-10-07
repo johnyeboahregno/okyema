@@ -12,6 +12,7 @@ use App\Models\SyncCursor;
 use App\Models\SyncRun;
 use App\Models\WorkspaceContext;
 use App\Services\Connectors\Contracts\CalendarConnector;
+use App\Services\Connectors\Contracts\ListsCalendars;
 use Illuminate\Support\Facades\DB;
 
 /**
@@ -26,37 +27,27 @@ final class CalendarSyncService
         WorkspaceContext $context,
         CalendarConnector $connector,
     ): SyncRun {
-        $calendar = $this->primaryCalendar($account, $context);
-
-        $cursor = SyncCursor::query()
-            ->where('connector_account_id', $account->id)
-            ->where('resource_type', 'events')
-            ->value('cursor');
-
         $startedAt = now();
 
         try {
-            $result = $connector->syncEvents($account, $cursor);
+            $calendars = $this->calendarsFor($account, $context, $connector);
+            $synced = 0;
 
-            $synced = DB::transaction(function () use ($account, $context, $calendar, $result): int {
-                $count = 0;
+            foreach ($calendars as $calendar) {
+                try {
+                    $synced += $this->syncCalendar($account, $context, $connector, $calendar);
+                } catch (\Throwable $e) {
+                    // One unreadable shared calendar must not block the rest;
+                    // the primary calendar failing is a real account failure.
+                    if ($calendar->is_primary) {
+                        throw $e;
+                    }
 
-                foreach ($result->items as $item) {
-                    $this->upsertEvent($account, $context, $calendar, $item);
-                    $count++;
+                    report($e);
                 }
+            }
 
-                if ($result->nextCursor !== null) {
-                    SyncCursor::updateOrCreate(
-                        ['connector_account_id' => $account->id, 'resource_type' => 'events'],
-                        ['cursor' => $result->nextCursor],
-                    );
-                }
-
-                $account->forceFill(['last_synced_at' => now()])->save();
-
-                return $count;
-            });
+            $account->forceFill(['last_synced_at' => now()])->save();
 
             return SyncRun::create([
                 'connector_account_id' => $account->id,
@@ -99,6 +90,95 @@ final class CalendarSyncService
             ->where('is_default', true)
             ->orderBy('id')
             ->first();
+    }
+
+    /**
+     * Sync one calendar inside a transaction; returns the events upserted.
+     */
+    private function syncCalendar(
+        ConnectorAccount $account,
+        WorkspaceContext $context,
+        CalendarConnector $connector,
+        Calendar $calendar,
+    ): int {
+        // The primary calendar keeps the original cursor key so existing
+        // accounts continue from their stored sync token.
+        $resource = $calendar->provider_calendar_id === 'primary'
+            ? 'events'
+            : 'events:'.$calendar->provider_calendar_id;
+
+        $cursor = SyncCursor::query()
+            ->where('connector_account_id', $account->id)
+            ->where('resource_type', $resource)
+            ->value('cursor');
+
+        $result = $connector instanceof ListsCalendars
+            ? $connector->syncCalendar($account, (string) $calendar->provider_calendar_id, $cursor)
+            : $connector->syncEvents($account, $cursor);
+
+        return DB::transaction(function () use ($account, $context, $calendar, $result, $resource): int {
+            $count = 0;
+
+            foreach ($result->items as $item) {
+                $this->upsertEvent($account, $context, $calendar, $item);
+                $count++;
+            }
+
+            if ($result->nextCursor !== null) {
+                SyncCursor::updateOrCreate(
+                    ['connector_account_id' => $account->id, 'resource_type' => $resource],
+                    ['cursor' => $result->nextCursor],
+                );
+            }
+
+            return $count;
+        });
+    }
+
+    /**
+     * The calendars to sync: everything the account exposes when the
+     * connector can list them, otherwise just the primary calendar. If the
+     * listing fails (e.g. an account connected before the calendar-list scope
+     * was granted) the primary calendar still syncs.
+     *
+     * @return list<Calendar>
+     */
+    private function calendarsFor(ConnectorAccount $account, WorkspaceContext $context, CalendarConnector $connector): array
+    {
+        $calendars = [$this->primaryCalendar($account, $context)];
+
+        if (! $connector instanceof ListsCalendars) {
+            return $calendars;
+        }
+
+        try {
+            $listed = $connector->listCalendars($account);
+        } catch (\Throwable $e) {
+            report($e);
+
+            return $calendars;
+        }
+
+        foreach ($listed as $info) {
+            if ($info['id'] === 'primary') {
+                continue;
+            }
+
+            $calendars[] = Calendar::firstOrCreate(
+                ['connector_account_id' => $account->id, 'provider_calendar_id' => $info['id']],
+                [
+                    'user_id' => $account->user_id,
+                    'workspace_context_id' => $context->id,
+                    'name' => $info['name'],
+                    'provider' => $account->provider->value,
+                    'timezone' => $info['timezone'] ?? 'UTC',
+                    'colour' => $info['colour'],
+                    'is_primary' => false,
+                ],
+            );
+        }
+
+        return $calendars;
     }
 
     private function primaryCalendar(ConnectorAccount $account, WorkspaceContext $context): Calendar

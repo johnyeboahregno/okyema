@@ -30,7 +30,10 @@ final class ConnectorOAuthService
     public function scopes(ConnectorProvider $provider): array
     {
         return match ($provider) {
-            ConnectorProvider::Google => ['https://www.googleapis.com/auth/calendar.readonly'],
+            ConnectorProvider::Google => [
+                'https://www.googleapis.com/auth/calendar.events',
+                'https://www.googleapis.com/auth/calendar.calendarlist.readonly',
+            ],
             ConnectorProvider::Microsoft => ['offline_access', 'Calendars.Read'],
             ConnectorProvider::Notion => [],
         };
@@ -110,6 +113,51 @@ final class ConnectorOAuthService
                 ? null
                 : now()->addSeconds((int) $response->json('expires_in')),
         ];
+    }
+
+    /**
+     * Return a usable access token, refreshing it first when it has expired
+     * (or is about to). Providers that never expire tokens return as-is.
+     */
+    public function freshAccessToken(ConnectorAccount $account): string
+    {
+        $token = (string) $account->access_token;
+
+        $expiring = $account->expires_at !== null && $account->expires_at->subMinute()->isPast();
+
+        if (! $expiring || empty($account->refresh_token)) {
+            return $token;
+        }
+
+        $provider = $account->provider;
+        $config = $this->config($provider);
+
+        $response = Http::asForm()->post($this->tokenUrl($provider), [
+            'client_id' => $config['client_id'],
+            'client_secret' => $config['client_secret'],
+            'refresh_token' => $account->refresh_token,
+            'grant_type' => 'refresh_token',
+        ]);
+
+        if ($response->failed()) {
+            // Google answers invalid_grant once the user revokes access.
+            if ($response->json('error') === 'invalid_grant') {
+                $account->forceFill([
+                    'status' => ConnectorStatus::Disconnected->value,
+                    'revoked_at' => now(),
+                ])->save();
+            }
+
+            throw new RuntimeException($provider->label().' token refresh failed: '.$response->body());
+        }
+
+        $account->forceFill([
+            'access_token' => (string) $response->json('access_token'),
+            'refresh_token' => $response->json('refresh_token') ?? $account->refresh_token,
+            'expires_at' => now()->addSeconds((int) $response->json('expires_in')),
+        ])->save();
+
+        return (string) $account->access_token;
     }
 
     /**

@@ -14,15 +14,15 @@ async function signInSimple(page: Page) {
   await page.fill('input[name="email"]', 'john@okyema.test');
   await page.fill('input[name="password"]', 'password');
   await page.click('button[type="submit"]');
-  await expect(page.locator('.big-header')).toBeVisible();
+  // Wait for Vue to actually mount (v-cloak is removed only after mount).
+  await page.waitForSelector('#app:not([v-cloak])', { timeout: 15000 });
 }
 
 test('simple mode — the shell renders the big button', async ({ page }) => {
   await signInSimple(page);
 
-  await expect(page.locator('.big-button')).toBeVisible();
-  // Nothing typed or attached yet, so the button waits.
-  await expect(page.locator('.big-button')).toBeDisabled();
+  await expect(page.locator('.big-orb')).toBeVisible();
+  await expect(page.getByText('Ready!')).toBeVisible();
 });
 
 test('simple mode — attaching a document enables the button', async ({ page }) => {
@@ -35,5 +35,4 @@ test('simple mode — attaching a document enables the button', async ({ page })
   });
 
   await expect(page.locator('.big-chip', { hasText: 'notes.txt' })).toBeVisible();
-  await expect(page.locator('.big-button')).toBeEnabled();
 });

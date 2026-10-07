@@ -100,7 +100,10 @@ test('the callback stores a connected account and syncs it immediately', functio
         ->and($account->external_account_id)->toBe('john@okyema.test')
         ->and($account->access_token)->toBe('at-1')
         ->and($account->refresh_token)->toBe('rt-1')
-        ->and($account->scopes)->toBe(['https://www.googleapis.com/auth/calendar.readonly']);
+        ->and($account->scopes)->toBe([
+            'https://www.googleapis.com/auth/calendar.events',
+            'https://www.googleapis.com/auth/calendar.calendarlist.readonly',
+        ]);
 
     // The just-connected calendar is pulled in straight away.
     expect(SyncRun::count())->toBe(1)

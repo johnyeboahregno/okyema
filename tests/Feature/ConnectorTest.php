@@ -32,7 +32,7 @@ test('the connectors endpoint lists a connected account without exposing tokens'
         ->assertJsonCount(1, 'data')
         ->assertJsonPath('data.0.provider', 'google')
         ->assertJsonPath('data.0.status', 'connected')
-        ->assertJsonPath('data.0.capabilities', ['calendar.read']);
+        ->assertJsonPath('data.0.capabilities', ['calendar.read', 'calendar.write']);
 
     $response->assertJsonMissing(['access_token' => 'super-secret']);
 });
