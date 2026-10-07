@@ -129,6 +129,7 @@ button:focus-visible, textarea:focus-visible, input:focus-visible, a:focus-visib
 .big-connect__btn:hover { border-color: var(--green); }
 .big-connect__icon { width: 16px; height: 16px; color: var(--green); }
 .big-connect__ok { font-size: 13px; font-weight: 600; color: var(--ok); }
+.big-connect__add { margin-left: 8px; background: none; border: 0; padding: 0; font: inherit; font-weight: 600; color: var(--green); cursor: pointer; text-decoration: underline; }
 
 /* ── Minimal input row ──────────────────────────────────────── */
 .big-inputrow {

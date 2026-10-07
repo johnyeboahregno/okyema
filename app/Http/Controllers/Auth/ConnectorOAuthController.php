@@ -75,7 +75,7 @@ final class ConnectorOAuthController extends Controller
         return $this->done(
             $provider === ConnectorProvider::Notion
                 ? 'Notion connected. Your assistant can now search it and propose changes for your approval.'
-                : $provider->label().' Calendar connected. It will sync on schedule — run `php artisan calendar:sync` to pull it in now.'
+                : $provider->label().' Calendar connected. Your assistant can now see your events and help you manage them in chat.'
         );
     }
 
