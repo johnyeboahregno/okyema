@@ -18,7 +18,7 @@ $maxRequest = 60000;
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Manrope:wght@400;600;700;800&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="<?= e($base) ?>/css/okyema-simple.css?v=<?= e(config('okyema.app.version')) ?>">
+<link rel="stylesheet" href="<?= e($base) ?>/css/okyema-simple.css?v=<?= e(config('okyema.app.version')) ?>-<?= (int) @filemtime(public_path('css/okyema-simple.css')) ?>">
     <?php include resource_path('views/partials/pwa-head.php'); ?>
 </head>
 <body>
