@@ -5,6 +5,8 @@ $aiInfo = [
     'provider' => (string) config('okyema.ai.provider', ''),
     'model' => (string) config('okyema.ai.model', ''),
 ];
+// Keep in sync with the "request" validation in AssistantController.
+$maxRequest = 60000;
 ?>
 <html lang="en" data-theme="light">
 <head>
@@ -20,297 +22,87 @@ $aiInfo = [
     <?php include resource_path('views/partials/pwa-head.php'); ?>
 </head>
 <body>
-<div id="app" class="simple-app" v-cloak>
-    <header class="simple-header">
-        <img class="simple-header__logo simple-logo--light" src="<?= e($base) ?>/assets/logos/okyema-logo-light.svg" alt="Okyema">
-        <img class="simple-header__logo simple-logo--dark" src="<?= e($base) ?>/assets/logos/okyema-logo-dark.svg" alt="Okyema">
+<div id="app" class="big-app" v-cloak>
+    <header class="big-header">
+        <img class="big-header__logo big-logo--light" src="<?= e($base) ?>/assets/logos/okyema-logo-light.svg" alt="Okyema">
+        <img class="big-header__logo big-logo--dark" src="<?= e($base) ?>/assets/logos/okyema-logo-dark.svg" alt="Okyema">
 
-        <div class="simple-header__actions">
-            <button class="context-chip" type="button" @click.stop="contextMenu = !contextMenu" aria-haspopup="menu" :aria-expanded="contextMenu ? 'true' : 'false'" aria-label="Switch workspace context">
-                <span class="context-chip__dot"></span>
-                <span class="context-chip__label">{{ activeContext ? activeContext.name : '…' }}</span>
-            </button>
-
+        <div class="big-header__actions">
             <button class="icon-btn" type="button" @click="toggleTheme" :aria-label="'Theme: ' + theme">◐</button>
-            <button class="icon-btn" type="button" @click="openSettings" aria-label="Open settings">⚙</button>
-        </div>
-
-        <div class="context-menu" v-if="contextMenu" @click.stop role="menu">
-            <button class="context-menu__item" v-for="c in contexts" :key="c.key"
-                    :class="{'context-menu__item--active': c.is_active}"
-                    type="button" role="menuitemradio" :aria-checked="c.is_active ? 'true' : 'false'"
-                    @click="activateContext(c)">
-                <span>{{ c.name }}</span>
-                <span v-if="c.is_active" aria-hidden="true">✓</span>
-            </button>
+            <button class="text-btn" type="button" @click="logout">Sign out</button>
         </div>
     </header>
 
-    <main class="simple-main">
-        <p class="simple-notice" v-if="notice" role="status" @click="notice = ''">{{ notice }}</p>
+    <main class="big-main">
+        <p class="big-notice" v-if="notice" role="status" @click="notice = ''">{{ notice }}</p>
 
-        <nav class="page-dots" aria-label="Pages">
-            <button class="page-dot" v-for="(p, i) in pages" :key="p.key" type="button"
-                    :class="{'is-active': i === currentPage}"
-                    :aria-label="p.label" :aria-current="i === currentPage ? 'page' : undefined"
-                    @click="goToPage(i)">
-                <svg v-if="p.key === 'ask'" class="page-dot__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"/></svg>
-                <svg v-else-if="p.key === 'notes'" class="page-dot__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"/><path d="M19 10v2a7 7 0 0 1-14 0v-2"/><line x1="12" y1="19" x2="12" y2="23"/><line x1="8" y1="23" x2="16" y2="23"/></svg>
-                <svg v-else-if="p.key === 'calendar'" class="page-dot__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
-                <svg v-else-if="p.key === 'transcripts'" class="page-dot__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>
-                <svg v-else class="page-dot__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="20 6 9 17 4 12"/></svg>
-            </button>
-        </nav>
+        <div class="big-card" @dragover.prevent @drop.prevent="onDrop">
+            <textarea ref="ask" class="big-input" v-model="query" aria-label="Ask Okyema"
+                      placeholder="Type it, paste it, or drop documents here…"
+                      @keydown.enter.exact.prevent="send()"></textarea>
 
-        <div class="pages" ref="pages" @scroll.passive="onPagesScroll">
-            <section class="page page--ask">
-                <section class="simple-main__results" aria-live="polite">
-                    <p class="empty-hint" v-if="!results.length && !loading">Ask a question, find a detail or get something moving.</p>
+            <div class="big-meta">
+                <span class="big-count" :class="{ 'is-over': charCount > maxChars }">{{ charCount }} / {{ maxChars }}</span>
+            </div>
 
-                    <div class="message message--user" v-for="m in userResults" :key="m.id">
-                        <div class="message__bubble">{{ m.text }}</div>
-                    </div>
+            <div class="big-chips" v-if="files.length">
+                <span class="big-chip" v-for="(f, i) in files" :key="f.name + i">
+                    📄 {{ f.name }}
+                    <button class="big-chip__x" type="button" :aria-label="'Remove ' + f.name" @click="removeFile(i)">×</button>
+                </span>
+            </div>
 
-                    <template v-for="m in assistantResults" :key="m.id">
-                        <div class="message message--assistant">
-                            <div class="message__bubble">{{ m.text }}</div>
-                            <div class="sources" v-if="m.sources && m.sources.length">
-                                <a class="source" v-for="s in m.sources" :key="s.url" :href="s.url" target="_blank" rel="noopener noreferrer">↗ {{ s.title }}</a>
-                            </div>
+            <div class="big-tools">
+                <label class="big-attach">
+                    📎 Attach documents
+                    <input type="file" multiple accept=".txt,.md,.csv,.json,.log,.html,.htm,.rtf,.xml,.yaml,.yml,.ts,.js,.css,.php,.env,text/plain,text/markdown,text/csv,application/json" hidden @change="onFiles">
+                </label>
+                <button class="big-clear" type="button" v-if="query || files.length" @click="clearAll">Clear</button>
+            </div>
 
-                            <div class="approval" v-if="m.approval && !m.approvalState">
-                                <div class="approval__title">{{ m.approval.title }}</div>
-                                <div class="approval__summary">This change needs your approval before it is made.</div>
-                                <div class="approval__actions">
-                                    <button class="btn btn--primary" type="button" @click="approve(m)">Approve</button>
-                                    <button class="btn btn--ghost" type="button" @click="reject(m)">Cancel</button>
-                                </div>
-                            </div>
-                            <div class="approval__state" v-if="m.approvalState === 'approved'">✓ Change made.</div>
-                            <div class="approval__state" v-if="m.approvalState === 'cancelled'">Change cancelled.</div>
-                            <div class="error-bar" v-if="m.approvalState === 'failed'">{{ m.approvalError || 'The change could not be made.' }}</div>
+            <div class="big-button-zone">
+                <button class="big-button" type="button"
+                        :disabled="loading || (!query.trim() && !files.length)"
+                        :aria-label="loading ? 'Thinking…' : 'Ask Okyema'"
+                        @click="send()">
+                    <span class="big-button__label">{{ loading ? '…' : 'ASK' }}</span>
+                    <span class="big-button__sub">{{ loading ? 'Thinking' : 'Okyema' }}</span>
+                </button>
+            </div>
 
-                            <div class="notice-bar" v-if="m.notice">{{ m.notice }}</div>
-                        </div>
-                    </template>
-
-                    <div class="error-bar" v-if="error">{{ error }}</div>
-                </section>
-
-                <section class="simple-main__composer">
-                    <div class="composer">
-                        <h1>What’s on your mind<em>?</em></h1>
-                        <p class="composer__sub">Type it. Say it. Okyema takes it from there.</p>
-
-                        <textarea id="ask" ref="ask" v-model="query" aria-label="Ask Okyema"
-                                  placeholder="Ask Okyema anything…"
-                                  @keydown.enter.exact.prevent="send()"></textarea>
-
-                        <div class="transcript-note" v-if="transcribed && query">
-                            <span>Transcribed — review and edit, then send.</span>
-                        </div>
-
-                        <div class="composer__foot">
-                            <span class="composer__status" :class="{'is-live': loading}">{{ loading ? 'Thinking…' : '✦ Assistant ready' }}</span>
-                            <button class="btn btn--primary" type="button" :disabled="loading || !query.trim()" @click="send()">Send ↑</button>
-                        </div>
-
-                        <button class="mic-btn" type="button" :class="{'is-recording': recording}"
-                                :aria-label="recording ? 'Stop recording' : 'Start voice input'"
-                                @click="startVoice">
-                            <span aria-hidden="true">🎤</span>
-                            <span>{{ recording ? 'Listening… tap to stop' : 'Voice' }}</span>
-                        </button>
-
-                        <div class="error-bar" v-if="voiceError">{{ voiceError }}</div>
-
-                        <div class="suggestions" v-if="!results.length && !loading">
-                            <button class="suggestion" type="button" @click="suggest('Plan my day')">✦ Plan my day</button>
-                            <button class="suggestion" type="button" @click="suggest('What did we decide in the last meeting?')">◷ Last meeting</button>
-                            <button class="suggestion" type="button" @click="suggest('Find my outstanding actions')">✓ My actions</button>
-                        </div>
-                    </div>
-                </section>
-            </section>
-
-            <section class="page page--notes">
-                <div class="composer">
-                    <div class="page__head">
-                        <h2>Note Taker</h2>
-                        <button class="modal__close" type="button" aria-label="Back to ask" @click="goToPage(0)">×</button>
-                    </div>
-
-                    <label class="field"><span>Title</span><input v-model="recorderTitle" placeholder="e.g. Weekly team sync"></label>
-
-                    <div class="recorder">
-                        <button class="recorder__btn" type="button" :class="{'is-recording': recorderActive}" @click="toggleRecorder">
-                            <span v-if="!recorderActive">● Start</span>
-                            <span v-else>■ Stop</span>
-                        </button>
-                        <span class="recorder__time" v-if="recorderActive">{{ recorderTime }}</span>
-                    </div>
-
-                    <p class="readonly-note" v-if="recorderStatus">{{ recorderStatus }}</p>
-                    <p class="readonly-note">Audio is transcribed on-device (Whisper) and filed as a meeting with a transcript note. The speech model downloads once on first use.</p>
-                </div>
-            </section>
-
-            <section class="page page--calendar">
-                <div class="page__head">
-                    <h2>Calendar</h2>
-                    <div class="calendar__nav">
-                        <button class="calendar__nav-btn" type="button" aria-label="Previous month" @click="prevMonth">‹</button>
-                        <span class="calendar__month">{{ calendarMonthLabel }}</span>
-                        <button class="calendar__nav-btn" type="button" aria-label="Next month" @click="nextMonth">›</button>
-                    </div>
-                </div>
-
-                <div class="calendar">
-                    <div class="calendar__weekdays">
-                        <span v-for="w in ['Mon','Tue','Wed','Thu','Fri','Sat','Sun']" :key="w">{{ w }}</span>
-                    </div>
-                    <div class="calendar__grid">
-                        <button v-for="d in calendarDays" :key="d.iso" type="button"
-                                class="calendar__day" :class="{'is-outside': !d.inMonth, 'is-today': d.isToday, 'is-selected': d.iso === selectedDay}"
-                                @click="selectDay(d)">
-                            <span class="calendar__daynum">{{ d.date.getDate() }}</span>
-                            <span v-if="d.eventCount || d.recordingCount" class="calendar__dots" aria-hidden="true">
-                                <span v-if="d.eventCount" class="calendar__dot calendar__dot--event"></span>
-                                <span v-if="d.recordingCount" class="calendar__dot calendar__dot--recording"></span>
-                            </span>
-                        </button>
-                    </div>
-                </div>
-
-                <h3 class="section-title" v-if="selectedEvents.length">Events</h3>
-                <div class="agenda__item" v-for="e in selectedEvents" :key="'event-' + e.id">
-                    <span class="agenda__time">{{ e.time_label }}</span>
-                    <div class="agenda__body">
-                        <div class="agenda__title">{{ e.title }}</div>
-                        <div class="agenda__meta" v-if="e.location">{{ e.location }}</div>
-                    </div>
-                </div>
-
-                <h3 class="section-title" v-if="selectedRecordings.length">Recordings</h3>
-                <div class="agenda__item" v-for="t in selectedRecordings" :key="'recording-' + t.id">
-                    <span class="agenda__time">{{ t.starts_at ? timeLabel(t.starts_at) : 'Recording' }}</span>
-                    <div class="agenda__body">
-                        <div class="agenda__title">{{ t.title }}</div>
-                    </div>
-                </div>
-
-                <p class="empty-hint" v-if="!selectedEvents.length && !selectedRecordings.length">Nothing on this day.</p>
-            </section>
-
-            <section class="page page--transcripts">
-                <div class="page__head">
-                    <h2>Transcripts</h2>
-                </div>
-
-                <p class="empty-hint" v-if="!transcripts.length">No recorded meetings yet. Record one from the Note Taker page.</p>
-
-                <div class="transcript" v-for="t in transcripts" :key="t.id" @click="toggleTranscript(t.id)">
-                    <div class="transcript__head">
-                        <div class="transcript__title">{{ t.title }}</div>
-                        <div class="transcript__actions" @click.stop>
-                            <button class="transcript__action" type="button" :aria-label="copiedId === t.id ? 'Copied' : 'Copy transcript'" @click="copyTranscript(t)">
-                                <svg v-if="copiedId !== t.id" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
-                                <svg v-else viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
-                            </button>
-                            <button class="transcript__action" type="button" aria-label="Share transcript" @click="shareTranscript(t)">
-                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><line x1="8.59" y1="13.51" x2="15.42" y2="17.49"/><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"/></svg>
-                            </button>
-                            <button class="transcript__action transcript__action--danger" type="button" aria-label="Delete transcript" @click="deleteTranscript(t)">
-                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>
-                            </button>
-                        </div>
-                    </div>
-                    <div class="transcript__meta" v-if="expandedTranscript !== t.id">Tap to read</div>
-                    <template v-if="expandedTranscript === t.id">
-                        <div v-if="t.formatted_html" class="transcript__html" v-html="t.formatted_html"></div>
-                        <div v-else class="transcript__body">{{ t.transcript }}</div>
-                    </template>
-                </div>
-            </section>
-
-            <section class="page page--actions">
-                <div class="page__head">
-                    <h2>Actions</h2>
-                </div>
-
-                <p class="empty-hint" v-if="!actions.length">No actions today.</p>
-
-                <div class="action" v-for="a in actions" :key="a.id">
-                    <div class="action__title">{{ a.title }}</div>
-                    <div class="action__meta" v-if="a.due_date">Due {{ a.due_date }}</div>
-                </div>
-            </section>
+            <p class="big-hint">One button. Type, paste or attach — then press it.</p>
         </div>
+
+        <section class="big-results" aria-live="polite">
+            <p class="big-empty" v-if="!results.length && !loading">What would you like Okyema to do?</p>
+
+            <div class="big-msg big-msg--user" v-for="m in userResults" :key="m.id">{{ m.text }}</div>
+
+            <template v-for="m in assistantResults" :key="m.id">
+                <div class="big-msg big-msg--assistant">{{ m.text }}</div>
+
+                <div class="big-sources" v-if="m.sources && m.sources.length">
+                    <a v-for="s in m.sources" :key="s.url" :href="s.url" target="_blank" rel="noopener noreferrer">↗ {{ s.title }}</a>
+                </div>
+
+                <div class="big-approval" v-if="m.approval && !m.approvalState">
+                    <div class="big-approval__title">{{ m.approval.title }}</div>
+                    <div class="big-approval__summary">This change needs your approval before it is made.</div>
+                    <div class="big-approval__actions">
+                        <button class="btn btn--primary" type="button" @click="approve(m)">Approve</button>
+                        <button class="btn btn--ghost" type="button" @click="reject(m)">Cancel</button>
+                    </div>
+                </div>
+                <div class="big-state" v-if="m.approvalState === 'approved'">✓ Change made.</div>
+                <div class="big-state" v-if="m.approvalState === 'cancelled'">Change cancelled.</div>
+                <div class="big-error" v-if="m.approvalState === 'failed'">{{ m.approvalError || 'The change could not be made.' }}</div>
+
+                <div class="big-state" v-if="m.notice">{{ m.notice }}</div>
+            </template>
+
+            <div class="big-error" v-if="error">{{ error }}</div>
+        </section>
     </main>
-
-    <!-- Settings -->
-    <div class="modal-backdrop" v-if="settingsOpen" @click.self="settingsOpen = false">
-        <div class="modal" role="dialog" aria-modal="true" aria-label="Settings" @keydown.esc="settingsOpen = false">
-            <div class="modal__head">
-                <h2>Settings</h2>
-                <button class="modal__close" type="button" aria-label="Close settings" @click="settingsOpen = false">×</button>
-            </div>
-
-            <form @submit.prevent="saveSettings">
-                <label class="field"><span>Display name</span><input v-model="settings.display_name"></label>
-                <label class="field"><span>Timezone</span><input v-model="settings.timezone" placeholder="Europe/London"></label>
-                <button class="btn btn--primary" type="submit">Save profile</button>
-            </form>
-
-            <h3 class="section-title">Connections</h3>
-
-            <div class="connection-row" v-for="c in connectors" :key="c.id">
-                <div>
-                    <div>{{ c.provider }}</div>
-                    <div class="muted">{{ c.status }} · {{ (c.capabilities || []).join(', ') }}</div>
-                </div>
-                <button v-if="c.status === 'connected'" class="btn btn--ghost" type="button" @click="disconnectConnector(c)">Disconnect</button>
-                <span v-else class="state">{{ c.status }}</span>
-            </div>
-
-            <div class="connection-row" v-if="!hasConnector('google')">
-                <span>Google Calendar</span>
-                <button class="btn btn--primary" type="button" @click="connectConnector('google')">Connect</button>
-            </div>
-            <div class="connection-row" v-if="!hasConnector('microsoft')">
-                <span>Outlook Calendar</span>
-                <button class="btn btn--primary" type="button" @click="connectConnector('microsoft')">Connect</button>
-            </div>
-            <div class="connection-row" v-if="!hasConnector('notion')">
-                <span>Notion</span>
-                <button class="btn btn--primary" type="button" @click="connectConnector('notion')">Connect</button>
-            </div>
-
-            <h3 class="section-title">AI provider</h3>
-            <p class="readonly-note">
-                {{ ai.enabled ? 'Live answers are on (' + ai.provider + (ai.model ? ' · ' + ai.model : '') + ').' : 'Live answers are off — configure AI_ENABLED, AI_PROVIDER and AI_MODEL on the deployment.' }}
-            </p>
-
-            <p class="readonly-note">Okyema v<?= e(config('okyema.app.version')) ?> · Powered by Regno AI</p>
-        </div>
-    </div>
-
-    <!-- Delete transcript confirmation -->
-    <div class="modal-backdrop" v-if="deleteTarget" @click.self="cancelDelete">
-        <div class="modal" role="dialog" aria-modal="true" aria-label="Delete transcript" @keydown.esc="cancelDelete">
-            <div class="modal__head">
-                <h2>Delete transcript?</h2>
-                <button class="modal__close" type="button" aria-label="Close" @click="cancelDelete">×</button>
-            </div>
-
-            <p class="readonly-note">This will permanently delete "{{ deleteTarget.title }}". This cannot be undone.</p>
-
-            <div class="modal__actions">
-                <button class="btn btn--ghost" type="button" @click="cancelDelete">Cancel</button>
-                <button class="btn btn--danger" type="button" @click="confirmDelete">Delete</button>
-            </div>
-        </div>
-    </div>
 </div>
 
 <script src="https://cdn.jsdelivr.net/npm/vue@3.4.38/dist/vue.global.prod.js"></script>
@@ -337,123 +129,33 @@ async function api(method, path, body) {
     return json.data;
 }
 
-let recognition = null;
-let recorderTimer = null;
-let recorder = null;
-let transcriber = null;
-
-async function getTranscriber() {
-    if (transcriber) return transcriber;
-    const { pipeline } = await import('https://cdn.jsdelivr.net/npm/@huggingface/transformers@3.3.3');
-    transcriber = await pipeline('automatic-speech-recognition', 'Xenova/whisper-base.en');
-    return transcriber;
-}
-
 Vue.createApp({
     data() {
         return {
             me: { name: '', email: '', profile: null },
             contexts: [],
             activeContext: null,
-            contextMenu: false,
             query: '',
-            transcribed: false,
+            files: [],
             results: [],
             loading: false,
             error: '',
-            recording: false,
-            voiceError: '',
-            theme: 'system',
-            settingsOpen: false,
-            settings: { display_name: '', timezone: '' },
-            connectors: [],
-            ai: <?= json_encode($aiInfo) ?>,
             notice: <?= json_encode($connectorNotice ?? '') ?>,
-            currentPage: 0,
-            pages: [
-                { key: 'ask', label: "What's on your mind" },
-                { key: 'notes', label: 'Note Taker' },
-                { key: 'calendar', label: 'Calendar' },
-                { key: 'transcripts', label: 'Transcripts' },
-                { key: 'actions', label: 'Actions' },
-            ],
-            calendarCursor: null,
-            selectedDay: null,
-            calendarEvents: [],
-            actions: [],
-            transcripts: [],
-            expandedTranscript: null,
-            copiedId: null,
-            deleteTarget: null,
-            recorderTitle: '',
-            recordingStartedAt: '',
-            recorderActive: false,
-            recorderSeconds: 0,
-            recorderStatus: '',
+            theme: 'system',
+            ai: <?= json_encode($aiInfo) ?>,
+            maxChars: <?= (int) $maxRequest ?>,
         };
     },
     computed: {
         userResults() { return this.results.filter(r => r.role === 'user'); },
         assistantResults() { return this.results.filter(r => r.role === 'assistant'); },
-        recorderTime() {
-            const m = Math.floor(this.recorderSeconds / 60);
-            const s = String(this.recorderSeconds % 60).padStart(2, '0');
-            return m + ':' + s;
-        },
-        calendarMonthLabel() {
-            if (!this.calendarCursor) return '';
-            return this.calendarCursor.toLocaleString('default', { month: 'long', year: 'numeric' });
-        },
-        calendarDays() {
-            if (!this.calendarCursor) return [];
-            const year = this.calendarCursor.getFullYear();
-            const month = this.calendarCursor.getMonth();
-            const startWeekday = (new Date(year, month, 1).getDay() + 6) % 7;
-            const start = new Date(year, month, 1 - startWeekday);
-            const days = [];
-            for (let i = 0; i < 42; i++) {
-                const d = new Date(start.getFullYear(), start.getMonth(), start.getDate() + i);
-                const iso = this.isoDate(d);
-                days.push({
-                    date: d,
-                    iso,
-                    inMonth: d.getMonth() === month,
-                    isToday: iso === this.isoDate(new Date()),
-                    recordingCount: this.recordingsForDay(iso).length,
-                    eventCount: this.eventsForDay(iso).length,
-                });
-            }
-            return days;
-        },
-        selectedRecordings() {
-            return this.selectedDay ? this.recordingsForDay(this.selectedDay) : [];
-        },
-        selectedEvents() {
-            return this.selectedDay ? this.eventsForDay(this.selectedDay) : [];
-        },
+        charCount() { return this.composedRequest().length; },
     },
     mounted() {
         this.theme = localStorage.getItem('okyema.theme') || 'system';
         this.applyTheme();
-        const now = new Date();
-        this.calendarCursor = new Date(now.getFullYear(), now.getMonth(), 1);
-        this.selectedDay = this.isoDate(now);
-        this.loadMonthEvents();
-        this.loadActions();
-        this.loadTranscripts();
-        document.addEventListener('click', this.onDocumentClick);
         this.loadAll()
-            .then(() => {
-                // Connector OAuth returns here with ?tab=settings — open the
-                // settings modal so the result notice and connections show.
-                if (new URLSearchParams(window.location.search).get('tab') === 'settings') {
-                    this.openSettings();
-                }
-            })
             .catch(() => { window.location.href = BASE_URL + '/login'; });
-    },
-    beforeUnmount() {
-        document.removeEventListener('click', this.onDocumentClick);
     },
     methods: {
         async loadAll() {
@@ -465,34 +167,25 @@ Vue.createApp({
             this.contexts = contexts;
             this.activeContext = contexts.find(c => c.is_active) || contexts[0] || null;
         },
-        onDocumentClick() {
-            this.contextMenu = false;
-        },
-        async activateContext(context) {
-            try {
-                const path = context.id === null
-                    ? '/api/contexts/all/activate'
-                    : `/api/contexts/${context.id}/activate`;
-                await api('POST', path);
-                this.activeContext = context;
-                this.contexts = this.contexts.map(c => ({ ...c, is_active: c.id === context.id }));
-                this.contextMenu = false;
-            } catch (e) {
-                this.error = e.message || 'Could not switch workspace.';
+        composedRequest() {
+            const parts = [];
+            const typed = (this.query || '').trim();
+            if (typed) parts.push(typed);
+            for (const f of this.files) {
+                const content = (f.text || '').trim();
+                if (content) parts.push('--- ' + f.name + ' ---\n' + content);
             }
-        },
-        suggest(text) {
-            this.query = text;
-            this.$nextTick(() => this.$refs.ask && this.$refs.ask.focus());
+            let text = parts.join('\n\n');
+            if (text.length > this.maxChars) text = text.slice(0, this.maxChars);
+            return text;
         },
         async send() {
-            const text = (this.query || '').trim();
+            const text = this.composedRequest().trim();
             if (!text || this.loading) return;
-            this.query = '';
-            this.transcribed = false;
-            this.voiceError = '';
             this.error = '';
-            this.results.push({ id: Date.now(), role: 'user', text });
+            this.notice = '';
+            const preview = text.length > 400 ? text.slice(0, 400) + '…' : text;
+            this.results.push({ id: Date.now(), role: 'user', text: preview });
             this.loading = true;
             try {
                 const data = await api('POST', '/api/assistant', {
@@ -509,66 +202,40 @@ Vue.createApp({
                     approvalState: null,
                     approvalError: '',
                 });
+                this.query = '';
+                this.files = [];
             } catch (e) {
                 this.error = e.message || 'Something went wrong. Please try again.';
             } finally {
                 this.loading = false;
             }
         },
-        startVoice() {
-            if (this.recording) { this.stopVoice(); return; }
-
-            const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
-            if (!SR) {
-                this.voiceError = 'Voice input is not supported in this browser. You can type your request instead.';
-                return;
-            }
-
-            this.voiceError = '';
-            recognition = new SR();
-            recognition.lang = navigator.language || 'en-GB';
-            recognition.interimResults = false;
-
-            recognition.onresult = (e) => {
-                const transcript = (e.results && e.results[0] && e.results[0][0] && e.results[0][0].transcript) || '';
-                if (transcript) { this.query = transcript; this.transcribed = true; }
+        onFiles(e) {
+            const input = e.target;
+            const list = Array.from(input.files || []);
+            input.value = '';
+            for (const file of list) this.readFile(file);
+        },
+        onDrop(e) {
+            const list = Array.from((e.dataTransfer && e.dataTransfer.files) || []);
+            for (const file of list) this.readFile(file);
+        },
+        readFile(file) {
+            if (!file) return;
+            const reader = new FileReader();
+            reader.onload = () => {
+                this.files.push({ name: file.name, text: String(reader.result || '') });
             };
-            recognition.onend = () => { recognition = null; this.recording = false; };
-            recognition.onerror = (e) => {
-                this.voiceError = this.voiceErrorMessage(e.error);
-                recognition = null;
-                this.recording = false;
+            reader.onerror = () => {
+                this.files.push({ name: file.name, text: '' });
             };
-
-            try {
-                recognition.start();
-                this.recording = true;
-            } catch (e) {
-                this.voiceError = 'Could not start the microphone. Please check permission and try again.';
-                this.recording = false;
-            }
+            reader.readAsText(file);
         },
-        stopVoice() {
-            if (recognition) { try { recognition.stop(); } catch (e) { /* ignore */ } }
-        },
-        voiceErrorMessage(code) {
-            switch (code) {
-                case 'not-allowed':
-                case 'service-not-allowed':
-                    return 'Microphone access was denied. Allow microphone permission and try again.';
-                case 'no-speech':
-                    return 'I did not hear anything. Please try speaking again.';
-                case 'audio-capture':
-                    return 'No microphone was found. You can type your request instead.';
-                case 'network':
-                    return 'Speech recognition failed on the network. Please try again.';
-                default:
-                    return 'Could not capture your voice. Please try again or type your request.';
-            }
-        },
+        removeFile(i) { this.files.splice(i, 1); },
+        clearAll() { this.query = ''; this.files = []; },
         async approve(m) {
             try {
-                const data = await api('POST', `/api/approvals/${m.approval.id}/approve`);
+                const data = await api('POST', '/api/approvals/' + m.approval.id + '/approve');
                 m.approvalState = data && data.ok === false ? 'failed' : 'approved';
                 m.approvalError = data && data.ok === false ? data.reason : '';
             } catch (e) {
@@ -578,261 +245,12 @@ Vue.createApp({
         },
         async reject(m) {
             try {
-                await api('POST', `/api/approvals/${m.approval.id}/reject`);
+                await api('POST', '/api/approvals/' + m.approval.id + '/reject');
                 m.approvalState = 'cancelled';
             } catch (e) {
                 m.approvalState = 'failed';
                 m.approvalError = e.message || 'Could not cancel.';
             }
-        },
-        openSettings() {
-            this.settingsOpen = true;
-            this.settings = {
-                display_name: (this.me.profile && this.me.profile.display_name) || '',
-                timezone: (this.me.profile && this.me.profile.timezone) || '',
-            };
-            this.loadConnectors();
-        },
-        async saveSettings() {
-            try {
-                const profile = await api('PATCH', '/api/profile', this.settings);
-                this.me.profile = profile;
-                this.settings = { display_name: profile.display_name || '', timezone: profile.timezone || '' };
-            } catch (e) {
-                this.error = e.message || 'Could not save.';
-            }
-        },
-        async loadConnectors() {
-            try { this.connectors = await api('GET', '/api/connectors'); } catch (e) { /* ignore */ }
-        },
-        hasConnector(provider) {
-            return (this.connectors || []).some(c => c.provider === provider && c.status === 'connected');
-        },
-        connectConnector(provider) {
-            window.location.href = BASE_URL + '/connectors/' + provider + '/redirect';
-        },
-        async disconnectConnector(c) {
-            try {
-                await api('DELETE', `/api/connectors/${c.id}`);
-                await this.loadConnectors();
-            } catch (e) {
-                this.error = e.message || 'Could not disconnect.';
-            }
-        },
-        goToPage(i) {
-            const el = this.$refs.pages;
-            if (!el) return;
-            el.scrollTo({ left: i * el.clientWidth, behavior: 'smooth' });
-            this.currentPage = i;
-        },
-        onPagesScroll() {
-            const el = this.$refs.pages;
-            if (!el || !el.clientWidth) return;
-            this.currentPage = Math.round(el.scrollLeft / el.clientWidth);
-        },
-        prevMonth() {
-            const c = this.calendarCursor;
-            this.calendarCursor = new Date(c.getFullYear(), c.getMonth() - 1, 1);
-            this.loadMonthEvents();
-        },
-        nextMonth() {
-            const c = this.calendarCursor;
-            this.calendarCursor = new Date(c.getFullYear(), c.getMonth() + 1, 1);
-            this.loadMonthEvents();
-        },
-        selectDay(day) {
-            this.selectedDay = day.iso;
-        },
-        isoDate(d) {
-            return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0');
-        },
-        recordingsForDay(iso) {
-            return this.transcripts.filter(t => {
-                if (!t.starts_at) return false;
-                const d = new Date(t.starts_at);
-                return !Number.isNaN(d.getTime()) && this.isoDate(d) === iso;
-            });
-        },
-        eventsForDay(iso) {
-            return this.calendarEvents.filter(e => {
-                if (!e.starts_at) return false;
-                const d = new Date(e.starts_at);
-                return !Number.isNaN(d.getTime()) && this.isoDate(d) === iso;
-            });
-        },
-        async loadMonthEvents() {
-            const c = this.calendarCursor;
-            if (!c) return;
-            const from = this.isoDate(new Date(c.getFullYear(), c.getMonth(), 1));
-            const to = this.isoDate(new Date(c.getFullYear(), c.getMonth() + 1, 0));
-            try {
-                const data = await api('GET', `/api/timeline?from=${from}&to=${to}`);
-                this.calendarEvents = (data && data.events) || [];
-            } catch (e) { /* ignore */ }
-        },
-        async loadActions() {
-            try {
-                this.actions = await api('GET', '/api/actions?view=today');
-            } catch (e) { /* ignore */ }
-        },
-        async loadTranscripts() {
-            try {
-                this.transcripts = await api('GET', '/api/transcripts');
-            } catch (e) { /* ignore */ }
-        },
-        timeLabel(iso) {
-            const d = new Date(iso);
-            if (Number.isNaN(d.getTime())) return '';
-            return String(d.getHours()).padStart(2, '0') + ':' + String(d.getMinutes()).padStart(2, '0');
-        },
-        toggleTranscript(id) {
-            this.expandedTranscript = this.expandedTranscript === id ? null : id;
-        },
-        deleteTranscript(t) {
-            this.deleteTarget = t;
-        },
-        cancelDelete() {
-            this.deleteTarget = null;
-        },
-        async confirmDelete() {
-            const t = this.deleteTarget;
-            if (!t) return;
-            this.deleteTarget = null;
-            try {
-                await api('DELETE', `/api/transcripts/${t.id}`);
-                this.transcripts = this.transcripts.filter(x => x.id !== t.id);
-                if (this.expandedTranscript === t.id) this.expandedTranscript = null;
-            } catch (e) {
-                this.error = e.message || 'Could not delete.';
-            }
-        },
-        async copyTranscript(t) {
-            try {
-                await navigator.clipboard.writeText(t.transcript || '');
-                this.copiedId = t.id;
-                setTimeout(() => { if (this.copiedId === t.id) this.copiedId = null; }, 1500);
-            } catch (e) {
-                this.error = 'Could not copy.';
-            }
-        },
-        async shareTranscript(t) {
-            if (!navigator.share) {
-                this.notice = 'Sharing is not supported on this device — use Copy.';
-                return;
-            }
-            try {
-                await navigator.share({ title: t.title, text: t.transcript || '' });
-            } catch (e) {
-                if (e && e.name !== 'AbortError') {
-                    this.notice = 'Could not share.';
-                }
-            }
-        },
-        toggleRecorder() {
-            if (this.recorderActive) this.stopRecorder();
-            else this.startRecorder();
-        },
-        async startRecorder() {
-            this.recorderStatus = '';
-            if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
-                this.recorderStatus = 'Recording is not supported in this browser.';
-                return;
-            }
-            let stream;
-            try {
-                stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-            } catch (e) {
-                this.recorderStatus = 'Microphone access was denied. Please allow it and try again.';
-                return;
-            }
-
-            const AudioCtx = window.AudioContext || window.webkitAudioContext;
-            if (!AudioCtx || !AudioCtx.prototype.createScriptProcessor) {
-                stream.getTracks().forEach(t => t.stop());
-                this.recorderStatus = 'Recording is not supported in this browser.';
-                return;
-            }
-
-            const audioCtx = new AudioCtx();
-            const source = audioCtx.createMediaStreamSource(stream);
-            const processor = audioCtx.createScriptProcessor(4096, 1, 1);
-            const chunks = [];
-
-            processor.onaudioprocess = (e) => {
-                const channel = e.inputBuffer.getChannelData(0);
-                if (channel && channel.length) chunks.push(new Float32Array(channel));
-            };
-
-            source.connect(processor);
-            const mute = audioCtx.createGain();
-            mute.gain.value = 0;
-            processor.connect(mute);
-            mute.connect(audioCtx.destination);
-
-            recorder = { audioCtx, chunks, stream, sampleRate: audioCtx.sampleRate };
-            this.recordingStartedAt = new Date().toISOString();
-
-            this.recorderActive = true;
-            this.recorderSeconds = 0;
-            recorderTimer = setInterval(() => { this.recorderSeconds += 1; }, 1000);
-        },
-        stopRecorder() {
-            if (recorderTimer) { clearInterval(recorderTimer); recorderTimer = null; }
-            if (!recorder) return;
-
-            const { audioCtx, chunks, stream, sampleRate } = recorder;
-            recorder = null;
-            this.recorderActive = false;
-
-            stream.getTracks().forEach(t => t.stop());
-            try { audioCtx.close(); } catch (e) { /* ignore */ }
-
-            this.transcribePcm(chunks, sampleRate);
-        },
-        async transcribePcm(chunks, sampleRate) {
-            if (!chunks.length) {
-                this.recorderStatus = 'No audio was captured.';
-                return;
-            }
-
-            const total = chunks.reduce((n, c) => n + c.length, 0);
-            const pcm = new Float32Array(total);
-            let offset = 0;
-            for (const c of chunks) { pcm.set(c, offset); offset += c.length; }
-
-            this.recorderStatus = 'Loading speech model… (first use may take a minute)';
-            const transcriber = await getTranscriber();
-            this.recorderStatus = 'Transcribing…';
-
-            const audio = await this.resample(pcm, sampleRate, 16000);
-            const output = await transcriber(audio);
-            const transcript = ((output && output.text) || '').trim();
-
-            if (!transcript) {
-                this.recorderStatus = 'No speech was detected.';
-                return;
-            }
-
-            await api('POST', '/api/transcripts', {
-                title: (this.recorderTitle || '').trim() || 'Meeting recording',
-                transcript,
-                starts_at: this.recordingStartedAt || null,
-                ends_at: new Date().toISOString(),
-            });
-            this.recorderStatus = 'Saved — transcript filed as a meeting.';
-            this.recorderTitle = '';
-        },
-        resample(pcm, fromRate, toRate) {
-            if (fromRate === toRate) return Promise.resolve(pcm);
-            const length = Math.max(1, Math.ceil(pcm.length * toRate / fromRate));
-            const offline = new OfflineAudioContext(1, length, toRate);
-            const buffer = offline.createBuffer(1, pcm.length, fromRate);
-            buffer.copyToChannel(pcm, 0);
-            const source = offline.createBufferSource();
-            source.buffer = buffer;
-            source.connect(offline.destination);
-            source.start();
-            return offline.startRendering().then(rendered => rendered.getChannelData(0));
         },
         toggleTheme() {
             this.theme = this.theme === 'light' ? 'dark' : this.theme === 'dark' ? 'system' : 'light';

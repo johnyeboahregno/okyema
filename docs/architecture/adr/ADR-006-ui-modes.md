@@ -29,6 +29,7 @@ Notion and approval services introduced alongside it.
 - Direct links and refreshes work in both modes (single `/` route).
 - `classic` is preserved visually and functionally.
 - The mode is not a user toggle, account preference or query parameter.
-- `simple` mode's typed and spoken requests flow through `POST /api/assistant`,
-  which grounds answers in the active context (including Notion) and routes
-  any proposed Notion change through a pending `ApprovalRequest`.
+- `simple` mode is a single big button: typed, pasted or attached-document
+  requests flow through `POST /api/assistant`, which grounds answers in the
+  active context (including Notion) and routes any proposed Notion change
+  through a pending `ApprovalRequest`.

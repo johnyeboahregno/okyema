@@ -38,7 +38,8 @@ test('the simple interface renders when OKYEMA_UI_MODE=simple', function () {
     $this->actingAs($user)->get('/')
         ->assertOk()
         ->assertSee('id="app"', false)
-        ->assertSee('simple-app', false);
+        ->assertSee('big-app', false)
+        ->assertSee('big-button', false);
 });
 
 test('an invalid OKYEMA_UI_MODE renders the classic interface', function () {

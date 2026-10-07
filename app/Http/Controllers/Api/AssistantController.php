@@ -18,7 +18,7 @@ class AssistantController extends Controller
     public function ask(Request $request): JsonResponse
     {
         $validated = $request->validate([
-            'request' => ['required', 'string', 'max:4000'],
+            'request' => ['required', 'string', 'max:60000'],
             'workspace_context_id' => ['nullable', 'integer'],
         ]);
 
