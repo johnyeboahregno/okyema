@@ -30,7 +30,10 @@ final class ConnectorOAuthService
     public function scopes(ConnectorProvider $provider): array
     {
         return match ($provider) {
+            // openid + email are needed for the userinfo lookup that names the account.
             ConnectorProvider::Google => [
+                'openid',
+                'email',
                 'https://www.googleapis.com/auth/calendar.events',
                 'https://www.googleapis.com/auth/calendar.calendarlist.readonly',
             ],

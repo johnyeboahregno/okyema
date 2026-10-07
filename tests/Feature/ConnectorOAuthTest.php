@@ -101,6 +101,8 @@ test('the callback stores a connected account and syncs it immediately', functio
         ->and($account->access_token)->toBe('at-1')
         ->and($account->refresh_token)->toBe('rt-1')
         ->and($account->scopes)->toBe([
+            'openid',
+            'email',
             'https://www.googleapis.com/auth/calendar.events',
             'https://www.googleapis.com/auth/calendar.calendarlist.readonly',
         ]);
