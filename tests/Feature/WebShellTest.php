@@ -39,7 +39,7 @@ test('the simple interface renders when OKYEMA_UI_MODE=simple', function () {
         ->assertOk()
         ->assertSee('id="app"', false)
         ->assertSee('big-app', false)
-        ->assertSee('big-button', false);
+        ->assertSee('big-orb', false);
 });
 
 test('an invalid OKYEMA_UI_MODE renders the classic interface', function () {

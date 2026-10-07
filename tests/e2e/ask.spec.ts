@@ -16,15 +16,16 @@ async function signInSimple(page: Page) {
   await page.fill('input[name="email"]', 'john@okyema.test');
   await page.fill('input[name="password"]', 'password');
   await page.click('button[type="submit"]');
-  await expect(page.locator('.big-app')).toBeVisible();
+  // Wait for Vue to actually mount (v-cloak is removed only after mount).
+  await page.waitForSelector('#app:not([v-cloak])', { timeout: 15000 });
 }
 
 test('the big button sends a typed request and shows an answer', async ({ page }) => {
   await signInSimple(page);
 
   await page.fill('textarea.big-input', 'What do I need to do today?');
-  await expect(page.locator('.big-button')).toBeEnabled();
-  await page.locator('.big-button').click();
+  await expect(page.locator('.big-orb')).toBeEnabled();
+  await page.locator('.big-orb').click();
 
   await expect(page.locator('.big-msg--assistant').first()).toBeVisible();
 });
