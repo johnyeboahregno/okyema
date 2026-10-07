@@ -62,7 +62,7 @@ button:focus-visible, textarea:focus-visible, input:focus-visible, a:focus-visib
     border-bottom: 1px solid var(--stroke);
 }
 
-.big-header__logo { height: 30px; width: auto; }
+.big-header__logo { height: 36px; width: auto; }
 .big-logo--dark { display: none; }
 [data-theme="dark"] .big-logo--light { display: none; }
 [data-theme="dark"] .big-logo--dark { display: block; }
