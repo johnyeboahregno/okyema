@@ -11,6 +11,7 @@ $maxRequest = 60000;
 <html lang="en" data-theme="light">
 <head>
 <meta charset="utf-8">
+<script>document.documentElement.setAttribute('data-theme', window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');</script>
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>Okyema</title>
 <link rel="icon" href="<?= e($base) ?>/assets/favicon/favicon.ico" sizes="32x32">
@@ -28,9 +29,6 @@ $maxRequest = 60000;
         <img class="big-header__logo big-logo--dark" src="<?= e($base) ?>/assets/logos/okyema-logo-dark.svg" alt="Okyema">
 
         <div class="big-header__actions">
-            <button class="big-theme" type="button" @click="toggleTheme" :aria-label="'Theme: ' + theme">
-                <svg class="big-theme__icon" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9" fill="none" stroke="currentColor" stroke-width="2"/><path d="M12 3a9 9 0 0 1 0 18z" fill="currentColor"/></svg>
-            </button>
             <button class="big-signout" type="button" @click="logout" aria-label="Sign out">
                 <svg class="big-signout__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
             </button>
@@ -168,7 +166,6 @@ Vue.createApp({
             hint: '',
             recorderActive: false,
             recorderStatus: '',
-            theme: 'system',
             maxChars: <?= (int) $maxRequest ?>,
         };
     },
@@ -187,8 +184,8 @@ Vue.createApp({
         },
     },
     mounted() {
-        this.theme = localStorage.getItem('okyema.theme') || 'system';
         this.applyTheme();
+        window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', () => this.applyTheme());
         this.loadAll()
             .catch(() => { window.location.href = BASE_URL + '/login'; });
     },
@@ -416,14 +413,8 @@ Vue.createApp({
                 m.approvalError = e.message || 'Could not cancel.';
             }
         },
-        toggleTheme() {
-            this.theme = this.theme === 'light' ? 'dark' : this.theme === 'dark' ? 'system' : 'light';
-            this.applyTheme();
-        },
         applyTheme() {
-            const stored = this.theme;
-            localStorage.setItem('okyema.theme', stored);
-            const dark = stored === 'dark' || (stored === 'system' && window.matchMedia('(prefers-color-scheme: dark)').matches);
+            const dark = window.matchMedia('(prefers-color-scheme: dark)').matches;
             document.documentElement.setAttribute('data-theme', dark ? 'dark' : 'light');
             const themeColor = document.querySelector('meta[name="theme-color"]');
             if (themeColor) themeColor.setAttribute('content', dark ? '#0E1116' : '#F6F4EF');
