@@ -403,6 +403,7 @@ a.list__item { text-decoration: none; }
 }
 .auth-title { font-size: 1.6rem; margin: 0 0 2px; letter-spacing: -.02em; }
 .auth-tagline { color: var(--text-muted); margin: 0 0 8px; }
+.auth-version { color: var(--text-muted); font-size: .75rem; opacity: .7; margin: 0 0 8px; }
 .auth-alert { background: rgba(235, 87, 87, .12); color: var(--danger); border-radius: 0; padding: 10px 12px; font-size: .9rem; margin-bottom: 16px; }
 .auth-form { display: grid; gap: 14px; }
 .auth-divider { text-align: center; color: var(--text-muted); margin: 4px 0; font-size: .85rem; }

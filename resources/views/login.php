@@ -18,6 +18,7 @@
         <img class="auth-logo" src="<?= e($base) ?>/assets/app-icon-light.svg" alt="Okyema">
         <h1 class="auth-title">Okyema</h1>
         <p class="auth-tagline">Your intelligent chief of staff</p>
+        <p class="auth-version">v<?= e(config('okyema.app.version')) ?></p>
     </div>
 
     <?php if ($errors->any()) { ?>

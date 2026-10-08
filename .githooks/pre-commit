@@ -1,0 +1,12 @@
+#!/bin/sh
+# Bump the patch version in config/okyema.php on every commit, so every push
+# carries a new version. Skip with SKIP_VERSION_BUMP=1.
+[ -n "$SKIP_VERSION_BUMP" ] && exit 0
+f=config/okyema.php
+cur=$(sed -n "s/.*'version' => '\([0-9]*\.[0-9]*\.[0-9]*\)'.*/\1/p" "$f" | head -n 1)
+[ -z "$cur" ] && exit 0
+major=${cur%%.*}; rest=${cur#*.}; minor=${rest%%.*}; patch=${rest#*.}
+next="$major.$minor.$((patch + 1))"
+sed -i "0,/'version' => '$cur'/s//'version' => '$next'/" "$f"
+git add "$f"
+echo "version: $cur -> $next"

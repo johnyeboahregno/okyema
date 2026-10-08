@@ -25,8 +25,11 @@ $maxRequest = 60000;
 <body>
 <div id="app" class="big-app" v-cloak @dragover.prevent @drop.prevent="onDrop">
     <header class="big-header">
-        <img class="big-header__logo big-logo--light" src="<?= e($base) ?>/assets/logos/okyema-logo-light.svg" alt="Okyema">
-        <img class="big-header__logo big-logo--dark" src="<?= e($base) ?>/assets/logos/okyema-logo-dark.svg" alt="Okyema">
+        <div class="big-header__brand">
+            <img class="big-header__logo big-logo--light" src="<?= e($base) ?>/assets/logos/okyema-logo-light.svg" alt="Okyema">
+            <img class="big-header__logo big-logo--dark" src="<?= e($base) ?>/assets/logos/okyema-logo-dark.svg" alt="Okyema">
+            <span class="big-header__version">v<?= e(config('okyema.app.version')) ?></span>
+        </div>
 
         <div class="big-header__actions">
             <button class="big-signout" type="button" @click="logout" aria-label="Sign out">

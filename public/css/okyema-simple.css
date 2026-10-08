@@ -62,6 +62,8 @@ button:focus-visible, textarea:focus-visible, input:focus-visible, a:focus-visib
     border-bottom: 1px solid var(--stroke);
 }
 
+.big-header__brand { display: flex; flex-direction: column; align-items: flex-start; gap: 2px; }
+.big-header__version { font-size: 11px; line-height: 1; color: var(--muted); letter-spacing: 0.04em; }
 .big-header__logo { height: 36px; width: auto; }
 .big-logo--dark { display: none; }
 [data-theme="dark"] .big-logo--light { display: none; }
