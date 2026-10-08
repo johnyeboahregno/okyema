@@ -42,7 +42,7 @@ $maxRequest = 60000;
         <p class="big-sub">{{ subtext }}</p>
 
         <div class="big-inputrow">
-            <textarea class="big-input" rows="1" v-model="query" aria-label="Ask Okyema"
+            <textarea class="big-input" rows="5" v-model="query" aria-label="Ask Okyema"
                       placeholder="Type, paste or drop a document…"
                       @keydown.enter.exact.prevent="send()"
                       @input="hint = ''"></textarea>
@@ -60,6 +60,13 @@ $maxRequest = 60000;
         </div>
 
         <div class="big-orb-zone">
+            <button class="big-orb" type="button" aria-label="Start recording in Granola" title="Start recording in Granola"
+                    @click="startGranola">
+                <span class="big-orb__halo"></span>
+                <span class="big-orb__ring">
+                    <svg class="big-orb__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="9" y="3" width="6" height="11" rx="3"/><path d="M5 11a7 7 0 0 0 14 0M12 18v3"/></svg>
+                </span>
+            </button>
             <button class="big-orb" type="button" :class="{ 'is-recording': recorderActive }" :disabled="loading"
                     :aria-label="recorderActive ? 'Recording — let go to send' : 'Hold to talk, tap to send'"
                     @pointerdown="beginHold($event)"
@@ -202,6 +209,11 @@ Vue.createApp({
             this.contexts = contexts;
             this.connectors = connectors;
             this.activeContext = contexts.find(c => c.is_active) || contexts[0] || null;
+        },
+        startGranola() {
+            // Opens the Granola desktop app on this device with a new note that auto-starts transcribing.
+            window.location.href = 'granola://new-document?auto_transcribe=true';
+            this.notice = 'Opening Granola… if nothing happens, install or open the Granola desktop app.';
         },
         connectGoogle() {
             window.location.href = BASE_URL + '/connectors/google/redirect';

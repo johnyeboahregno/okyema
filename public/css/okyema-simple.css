@@ -136,25 +136,26 @@ button:focus-visible, textarea:focus-visible, input:focus-visible, a:focus-visib
     width: 100%;
     margin-top: 40px;
     display: flex;
-    align-items: center;
+    align-items: flex-start;
     gap: 8px;
-    border-bottom: 1px solid var(--stroke);
-    padding-bottom: 8px;
 }
 .big-input {
     flex: 1;
-    border: 0;
+    border: 1px solid var(--stroke);
+    border-radius: 12px;
     background: transparent;
-    resize: none;
+    resize: vertical;
+    font: inherit;
     font-size: 15px;
     line-height: 1.4;
-    min-height: 24px;
-    max-height: 120px;
-    text-align: center;
+    padding: 12px 14px;
+    min-height: 120px;
+    max-height: 320px;
+    text-align: left;
     overflow-y: auto;
 }
 .big-input::placeholder { color: var(--muted); }
-.big-attach { display: grid; place-items: center; width: 32px; height: 32px; border-radius: 50%; color: var(--muted); flex: 0 0 auto; }
+.big-attach { margin-top: 4px; display: grid; place-items: center; width: 32px; height: 32px; border-radius: 50%; color: var(--muted); flex: 0 0 auto; }
 .big-attach:hover { color: var(--text); }
 .big-attach__icon { width: 20px; height: 20px; }
 
@@ -174,7 +175,7 @@ button:focus-visible, textarea:focus-visible, input:focus-visible, a:focus-visib
 .big-chip__x:hover { background: var(--danger); color: #fff; }
 
 /* ── THE BIG BUTTON (orb) ───────────────────────────────────── */
-.big-orb-zone { margin-top: 48px; }
+.big-orb-zone { margin-top: 48px; display: flex; align-items: center; justify-content: center; gap: 16px; flex-wrap: wrap; }
 .big-orb {
     position: relative;
     width: 212px;
