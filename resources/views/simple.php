@@ -64,14 +64,12 @@ $maxRequest = 60000;
                     @click="startGranola">
                 <span class="big-orb__halo"></span>
                 <span class="big-orb__ring">
-                    <svg class="big-orb__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="9" y="3" width="6" height="11" rx="3"/><path d="M5 11a7 7 0 0 0 14 0M12 18v3"/></svg>
+                    <svg class="big-orb__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="8" cy="11" r="2.6"/><circle cx="16" cy="11" r="2.6"/><path d="M3 20c0-2.8 2.2-5 5-5s5 2.2 5 5M13 20c0-2.8 2.2-5 5-5s3 1.2 3 3"/><circle cx="19.5" cy="4.5" r="2" fill="var(--danger)" stroke="none"/></svg>
                 </span>
             </button>
             <button class="big-orb" type="button" :class="{ 'is-recording': recorderActive }" :disabled="loading"
-                    :aria-label="recorderActive ? 'Recording — let go to send' : 'Hold to talk, tap to send'"
-                    @pointerdown="beginHold($event)"
-                    @pointerup="endHold"
-                    @pointercancel="endHold"
+                    :aria-label="recorderActive ? 'Recording — tap to stop and send' : 'Tap to talk'"
+                    @click="toggleRecord"
                     @contextmenu.prevent>
                 <span class="big-orb__halo"></span>
                 <span class="big-orb__ring">
@@ -148,7 +146,6 @@ async function api(method, path, body) {
 
 let recorder = null;
 let recorderTimer = null;
-let holdTimer = null;
 let holdCancelled = false;
 let transcriber = null;
 
@@ -185,7 +182,7 @@ Vue.createApp({
             return (this.connectors || []).some(c => c.provider === 'google' && c.status === 'connected');
         },
         subtext() {
-            if (this.recorderActive) return 'Keep holding to record…';
+            if (this.recorderActive) return 'Recording… tap again to stop';
             if (this.loading) return 'Thinking…';
             if (this.recorderStatus) return this.recorderStatus;
             if (this.hint) return this.hint;
@@ -212,8 +209,11 @@ Vue.createApp({
         },
         startGranola() {
             // Opens the Granola desktop app on this device with a new note that auto-starts transcribing.
-            window.location.href = 'granola://new-document?auto_transcribe=true';
-            this.notice = 'Opening Granola… if nothing happens, install or open the Granola desktop app.';
+            const touch = /Android|iPhone|iPad|iPod/i.test(navigator.userAgent);
+            this.notice = touch
+                ? 'Granola can only be started from the desktop app. Open Granola on your phone and tap record there.'
+                : 'Opening Granola… if nothing happens, install or open the Granola desktop app.';
+            if (!touch) window.location.href = 'granola://new-document?auto_transcribe=true';
         },
         connectGoogle() {
             window.location.href = BASE_URL + '/connectors/google/redirect';
@@ -268,25 +268,22 @@ Vue.createApp({
                 this.loading = false;
             }
         },
-        beginHold(e) {
-            if (this.loading) return;
-            if (e && e.target && e.target.setPointerCapture) {
-                try { e.target.setPointerCapture(e.pointerId); } catch (err) { /* ignore */ }
+        toggleRecord() {
+            if (this.recorderActive) {
+                holdCancelled = true;
+                this.stopRecorder();
+                return;
             }
+            if (this.loading) return;
             this.hint = '';
             this.error = '';
             this.recorderStatus = '';
-            holdCancelled = false;
-            holdTimer = setTimeout(() => { this.startRecorder(); }, 280);
-        },
-        endHold() {
-            if (holdTimer) { clearTimeout(holdTimer); holdTimer = null; }
-            holdCancelled = true;
-            if (this.recorderActive) {
-                this.stopRecorder();
-            } else if (!this.loading) {
+            if ((this.query || '').trim() || this.files.length) {
                 this.send();
+                return;
             }
+            holdCancelled = false;
+            this.startRecorder();
         },
         async startRecorder() {
             this.recorderStatus = '';
