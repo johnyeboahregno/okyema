@@ -26,8 +26,8 @@ $maxRequest = 60000;
 <div id="app" class="big-app" v-cloak @dragover.prevent @drop.prevent="onDrop">
     <header class="big-header">
         <div class="big-header__brand">
-            <img class="big-header__logo big-logo--light" src="<?= e($base) ?>/assets/logos/okyema-logo-light.svg" alt="Okyema">
-            <img class="big-header__logo big-logo--dark" src="<?= e($base) ?>/assets/logos/okyema-logo-dark.svg" alt="Okyema">
+            <img class="big-header__logo big-logo--light" src="<?= e($base) ?>/assets/logos/okyema-logo-light.svg?v=<?= e(config('okyema.app.version')) ?>" alt="Okyema">
+            <img class="big-header__logo big-logo--dark" src="<?= e($base) ?>/assets/logos/okyema-logo-dark.svg?v=<?= e(config('okyema.app.version')) ?>" alt="Okyema">
             <span class="big-header__version">v<?= e(config('okyema.app.version')) ?></span>
         </div>
 
