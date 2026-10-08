@@ -208,12 +208,19 @@ Vue.createApp({
             this.activeContext = contexts.find(c => c.is_active) || contexts[0] || null;
         },
         startGranola() {
-            // Opens the Granola desktop app on this device with a new note that auto-starts transcribing.
-            const touch = /Android|iPhone|iPad|iPod/i.test(navigator.userAgent);
-            this.notice = touch
-                ? 'Granola can only be started from the desktop app. Open Granola on your phone and tap record there.'
-                : 'Opening Granola… if nothing happens, install or open the Granola desktop app.';
-            if (!touch) window.location.href = 'granola://new-document?auto_transcribe=true';
+            // Ask the OS to open Granola with a new note that auto-starts transcribing.
+            // If the page stays visible, the app didn't open, so say so.
+            let left = false;
+            const onHide = () => { if (document.hidden) left = true; };
+            document.addEventListener('visibilitychange', onHide);
+            window.addEventListener('pagehide', () => { left = true; }, { once: true });
+            window.location.href = 'granola://new-document?auto_transcribe=true';
+            setTimeout(() => {
+                document.removeEventListener('visibilitychange', onHide);
+                if (!left && !document.hidden) {
+                    this.notice = 'Granola didn’t open. Make sure the Granola app is installed, or open it and tap record there.';
+                }
+            }, 1500);
         },
         connectGoogle() {
             window.location.href = BASE_URL + '/connectors/google/redirect';
