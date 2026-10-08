@@ -80,9 +80,6 @@ $maxRequest = 60000;
             </button>
         </div>
 
-        <a class="big-testlink" href="granola://open">Test 1: granola://open</a>
-        <a class="big-testlink" href="intent://#Intent;action=ai.granola.action.NEW_NOTE_FROM_WIDGET;package=ai.granola;end">Test 2: Android new-note intent</a>
-        <a class="big-testlink" href="intent://#Intent;action=ai.granola.action.RECORDING_START;package=ai.granola;end">Test 3: Android start-recording intent</a>
 
         <div class="big-connect">
             <span class="big-connect__ok" v-if="googleConnected">✓ Google Calendar connected
@@ -95,9 +92,12 @@ $maxRequest = 60000;
         </div>
 
         <div class="big-results" v-if="results.length || error" aria-live="polite">
-            <div class="big-msg big-msg--user" v-for="m in userResults" :key="m.id">{{ m.text }}</div>
+            <div class="big-error" v-if="error">{{ error }}</div>
 
-            <template v-for="m in assistantResults" :key="m.id">
+            <template v-for="m in newestFirst" :key="m.id">
+                <div class="big-msg big-msg--user" v-if="m.role === 'user'">{{ m.text }}</div>
+
+                <template v-else>
                 <div class="big-msg big-msg--assistant">{{ m.text }}</div>
 
                 <div class="big-sources" v-if="m.sources && m.sources.length">
@@ -117,9 +117,8 @@ $maxRequest = 60000;
                 <div class="big-error" v-if="m.approvalState === 'failed'">{{ m.approvalError || 'The change could not be made.' }}</div>
 
                 <div class="big-state" v-if="m.notice">{{ m.notice }}</div>
+                </template>
             </template>
-
-            <div class="big-error" v-if="error">{{ error }}</div>
         </div>
     </main>
 </div>
@@ -180,8 +179,7 @@ Vue.createApp({
         };
     },
     computed: {
-        userResults() { return this.results.filter(r => r.role === 'user'); },
-        assistantResults() { return this.results.filter(r => r.role === 'assistant'); },
+        newestFirst() { return this.results.slice().reverse(); },
         googleConnected() {
             return (this.connectors || []).some(c => c.provider === 'google' && c.status === 'connected');
         },
