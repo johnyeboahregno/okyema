@@ -80,6 +80,8 @@ $maxRequest = 60000;
             </button>
         </div>
 
+        <a class="big-testlink" href="granola://new-document">Test: open Granola new note</a>
+
         <div class="big-connect">
             <span class="big-connect__ok" v-if="googleConnected">✓ Google Calendar connected
                 <button class="big-connect__add" type="button" @click="connectGoogle">+ Add another</button>

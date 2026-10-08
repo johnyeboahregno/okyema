@@ -159,6 +159,9 @@ button:focus-visible, textarea:focus-visible, input:focus-visible, a:focus-visib
 .big-attach:hover { color: var(--text); }
 .big-attach__icon { width: 20px; height: 20px; }
 
+.big-testlink { margin-top: 16px; font-size: 13px; color: var(--muted); border: 1px dashed var(--stroke); border-radius: 999px; padding: 8px 14px; text-decoration: none; }
+.big-testlink:hover { color: var(--text); }
+
 .big-chips { width: 100%; margin-top: 10px; display: flex; flex-wrap: wrap; gap: 6px; justify-content: center; }
 .big-chip {
     display: inline-flex;
