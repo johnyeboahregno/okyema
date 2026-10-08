@@ -167,6 +167,14 @@ button:focus-visible, textarea:focus-visible, input:focus-visible, a:focus-visib
 .big-input::placeholder { color: var(--muted); }
 .big-attach { margin-top: 4px; display: grid; place-items: center; width: 32px; height: 32px; border-radius: 50%; color: var(--muted); flex: 0 0 auto; }
 .big-attach:hover { color: var(--text); }
+.big-send {
+    display: grid; place-items: center; width: 32px; height: 32px; margin-top: 4px; border-radius: 50%;
+    background: var(--green); color: #08251C; flex: 0 0 auto;
+    transition: opacity 0.15s ease, transform 0.15s ease;
+}
+.big-send:disabled { opacity: 0.35; cursor: default; }
+.big-send:active:not(:disabled) { transform: scale(0.94); }
+.big-send__icon { width: 18px; height: 18px; }
 .big-attach__icon { width: 20px; height: 20px; }
 
 .big-chips { width: 100%; margin-top: 10px; display: flex; flex-wrap: wrap; gap: 6px; justify-content: center; }
@@ -188,7 +196,7 @@ button:focus-visible, textarea:focus-visible, input:focus-visible, a:focus-visib
 .big-orb-zone { width: 100%; margin-top: 48px; display: flex; align-items: center; justify-content: center; gap: 16px; flex-wrap: nowrap; }
 .big-orb {
     position: relative;
-    width: min(212px, calc(50% - 8px));
+    width: min(106px, calc(50% - 8px));
     flex: 0 0 auto;
     aspect-ratio: 1;
     border-radius: 50%;
@@ -212,11 +220,11 @@ button:focus-visible, textarea:focus-visible, input:focus-visible, a:focus-visib
     transition: transform 0.15s ease, border-color 0.15s ease;
 }
 .big-orb__icon { width: 33%; height: 33%; color: var(--text); }
-.big-orb__dots { font-size: 42px; font-weight: 600; letter-spacing: 3px; color: var(--green); transform: translateY(-3px); }
+.big-orb__dots { font-size: 21px; font-weight: 600; letter-spacing: 3px; color: var(--green); transform: translateY(-3px); }
 
 .big-orb.is-recording .big-orb__halo { background: rgba(208, 68, 68, 0.14); }
 .big-orb.is-recording .big-orb__ring { border-color: var(--danger); }
-.big-orb__rec { font-size: 36px; line-height: 1; color: var(--danger); animation: pulse 1s ease-in-out infinite; }
+.big-orb__rec { font-size: 18px; line-height: 1; color: var(--danger); animation: pulse 1s ease-in-out infinite; }
 
 @keyframes pulse {
     0%, 100% { opacity: 1; }
