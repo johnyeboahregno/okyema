@@ -63,9 +63,9 @@ button:focus-visible, textarea:focus-visible, input:focus-visible, a:focus-visib
 }
 
 .big-header__brand { --logo-h: 36px; display: flex; flex-direction: column; align-items: flex-start; }
-/* The slogan starts 315/1200 of the way across the 1200x280 logo and sits ~62/280 above its bottom edge. */
+/* Tucks under the OKYEMA wordmark, which starts 315/1200 across the 1200x280 logo and ends ~116/280 above its bottom edge. */
 .big-header__version {
-    margin-top: calc(var(--logo-h) * -0.16);
+    margin-top: calc(var(--logo-h) * -0.3);
     margin-left: calc(var(--logo-h) * 1200 / 280 * 0.2625);
     font-size: 11px;
     line-height: 1;
