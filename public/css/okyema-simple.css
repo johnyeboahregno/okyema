@@ -62,9 +62,17 @@ button:focus-visible, textarea:focus-visible, input:focus-visible, a:focus-visib
     border-bottom: 1px solid var(--stroke);
 }
 
-.big-header__brand { display: flex; flex-direction: column; align-items: flex-start; gap: 2px; }
-.big-header__version { font-size: 11px; line-height: 1; color: var(--muted); letter-spacing: 0.04em; }
-.big-header__logo { height: 36px; width: auto; }
+.big-header__brand { --logo-h: 36px; display: flex; flex-direction: column; align-items: flex-start; }
+/* The slogan starts 315/1200 of the way across the 1200x280 logo and sits ~62/280 above its bottom edge. */
+.big-header__version {
+    margin-top: calc(var(--logo-h) * -0.16);
+    margin-left: calc(var(--logo-h) * 1200 / 280 * 0.2625);
+    font-size: 11px;
+    line-height: 1;
+    color: var(--muted);
+    letter-spacing: 0.04em;
+}
+.big-header__logo { height: var(--logo-h); width: auto; }
 .big-logo--dark { display: none; }
 [data-theme="dark"] .big-logo--light { display: none; }
 [data-theme="dark"] .big-logo--dark { display: block; }
