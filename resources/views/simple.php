@@ -80,7 +80,9 @@ $maxRequest = 60000;
             </button>
         </div>
 
-        <a class="big-testlink" href="granola://new-document">Test: open Granola new note</a>
+        <a class="big-testlink" href="granola://open">Test 1: granola://open</a>
+        <a class="big-testlink" href="intent://#Intent;action=ai.granola.action.NEW_NOTE_FROM_WIDGET;package=ai.granola;end">Test 2: Android new-note intent</a>
+        <a class="big-testlink" href="intent://#Intent;action=ai.granola.action.RECORDING_START;package=ai.granola;end">Test 3: Android start-recording intent</a>
 
         <div class="big-connect">
             <span class="big-connect__ok" v-if="googleConnected">✓ Google Calendar connected
